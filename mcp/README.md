@@ -1,6 +1,6 @@
 # AI Pulse Georgia — MCP Server
 
-Query the [awesome-ai-pulse-georgia](https://github.com/tornikebolokadze1-cyber/awesome-ai-pulse-georgia) curated collection (378 AI repos across 15 categories) directly from inside Claude Code, Cursor, Codex, Claude.ai, or any other [Model Context Protocol](https://modelcontextprotocol.io)–compatible client — or straight from your terminal with the bundled `aipulse` **CLI**.
+Query the [awesome-ai-pulse-georgia](https://github.com/tornikebolokadze1-cyber/awesome-ai-pulse-georgia) curated collection (418 AI repos across 20 categories) directly from inside Claude Code, Cursor, Codex, Claude.ai, or any other [Model Context Protocol](https://modelcontextprotocol.io)–compatible client — or straight from your terminal with the bundled `aipulse` **CLI**.
 
 Instead of opening GitHub and scrolling through a README, ask your AI assistant:
 
@@ -76,7 +76,7 @@ All tools accept `lang: "en" | "ka" | "both"` (default `"en"`). English descript
 
 ### Categories
 
-`coding` (🤖) · `plugins` (⚡) · `design` (🎨) · `mcp` (🔌) · `scraping` (🕷️) · `frameworks` (🧬) · `workflow` (🔁) · `business` (💼) · `finance` (💰) · `memory` (🧠) · `codeintel` (🔍) · `infra` (⚙️) · `media` (🎬) · `resources` (📚)
+`coding` (🤖) · `orchestration` (🎛️) · `plugins` (⚡) · `codeintel` (🔍) · `tokens` (💸) · `frameworks` (🧬) · `mcp` (🔌) · `scraping` (🕷️) · `memory` (🧠) · `agentinfra` (🧰) · `security` (🛡️) · `infra` (⚙️) · `workflow` (🔁) · `assistants` (🦞) · `business` (💼) · `research` (🔬) · `finance` (💰) · `design` (🎨) · `media` (🎬) · `resources` (📚)
 
 ---
 
