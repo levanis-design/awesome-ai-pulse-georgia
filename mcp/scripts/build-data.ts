@@ -26,54 +26,87 @@ type Category = {
 };
 
 const CATEGORY_MAP: Record<string, Omit<Category, "georgian">> = {
-  "კოდინგ აგენტები": { slug: "coding", emoji: "🤖", english: "Coding Agents" },
-  "Claude Code პლაგინები და უნარები": {
+  "კოდინგ აგენტები და AI IDE-ები": {
+    slug: "coding",
+    emoji: "🤖",
+    english: "Coding Agents & AI IDEs",
+  },
+  "აგენტების ორკესტრაცია": {
+    slug: "orchestration",
+    emoji: "🎛️",
+    english: "Agent Orchestration",
+  },
+  "უნარები, პლაგინები და მეთოდოლოგიები": {
     slug: "plugins",
     emoji: "⚡",
-    english: "Claude Code Plugins & Skills",
+    english: "Skills, Plugins & Methodologies",
   },
-  "დიზაინი და UI": { slug: "design", emoji: "🎨", english: "Design & UI" },
-  "MCP ინტეგრაციები": { slug: "mcp", emoji: "🔌", english: "MCP Integrations" },
-  "ვებ სკრეიპინგი და ბრაუზერი": {
-    slug: "scraping",
-    emoji: "🕷️",
-    english: "Web Scraping & Browser",
+  "კოდბაზის გრაფები და კონტექსტი": {
+    slug: "codeintel",
+    emoji: "🔍",
+    english: "Code Intelligence & Context",
+  },
+  "ტოკენები, ხარჯი და LLM Gateway-ები": {
+    slug: "tokens",
+    emoji: "💸",
+    english: "Tokens, Cost & LLM Gateways",
   },
   "AI აგენტების ფრეიმვორკები": {
     slug: "frameworks",
     emoji: "🧬",
-    english: "AI Agent Frameworks & Orchestration",
+    english: "Agent Frameworks & SDKs",
+  },
+  "MCP და ინტეგრაციები": {
+    slug: "mcp",
+    emoji: "🔌",
+    english: "MCP, Protocols & Integrations",
+  },
+  "ვები, ბრაუზერი და კომპიუტერის მართვა": {
+    slug: "scraping",
+    emoji: "🕷️",
+    english: "Web, Browser & Computer Use",
+  },
+  "მეხსიერება, RAG და დოკუმენტები": {
+    slug: "memory",
+    emoji: "🧠",
+    english: "Memory, RAG & Documents",
+  },
+  "Sandbox-ები, Evals და Observability": {
+    slug: "agentinfra",
+    emoji: "🧰",
+    english: "Agent Infra: Sandboxes, Evals & Observability",
+  },
+  "AI უსაფრთხოება": { slug: "security", emoji: "🛡️", english: "AI Security" },
+  "ინფერენსი და მოდელები": {
+    slug: "infra",
+    emoji: "⚙️",
+    english: "Inference & Models",
   },
   "Workflow და No-Code ბილდერები": {
     slug: "workflow",
     emoji: "🔁",
     english: "No-Code & Workflow Builders",
   },
-  "AI ასისტენტები და ბიზნეს-აგენტები": {
+  "AI ასისტენტები და ჩატ-ინტერფეისები": {
+    slug: "assistants",
+    emoji: "🦞",
+    english: "AI Assistants & Chat UIs",
+  },
+  "ბიზნეს და სამუშაო აგენტები": {
     slug: "business",
     emoji: "💼",
-    english: "AI Assistants & Business Agents",
+    english: "Business & Work Agents",
+  },
+  "კვლევა და განათლება": {
+    slug: "research",
+    emoji: "🔬",
+    english: "Research & Education",
   },
   "ფინანსური AI": { slug: "finance", emoji: "💰", english: "Finance AI" },
-  "მეხსიერება, RAG და Vector DB": {
-    slug: "memory",
-    emoji: "🧠",
-    english: "Memory, RAG & Vector DBs",
-  },
-  "კოდბაზის გრაფები და კონტექსტი": {
-    slug: "codeintel",
-    emoji: "🔍",
-    english: "Codebase Graphs & Context",
-  },
-  "ტოკენების დაზოგვა და ხარჯი": {
-    slug: "tokens",
-    emoji: "💸",
-    english: "Token & Cost Optimization",
-  },
-  "ინფერენსი და LLM ხელსაწყოები": {
-    slug: "infra",
-    emoji: "⚙️",
-    english: "Model Inference & LLM Tooling",
+  "დიზაინი და UI": {
+    slug: "design",
+    emoji: "🎨",
+    english: "Design, UI & Diagrams",
   },
   "მედია-გენერაცია": {
     slug: "media",
