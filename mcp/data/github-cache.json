@@ -1606,5 +1606,245 @@
   "google-gemini/cookbook": {
     "description": "Examples and guides for using the Gemini API",
     "fetchedAt": "2026-09-06T18:06:28.567Z"
+  },
+  "google-research/harness2": {
+    "description": "Harness² from Google Research: a plug-and-play framework for recursive agent harnessing. An agent refines its own harness (system prompt, guardrails, memory, tool guidance, subagents, skills, scripts and plugins) without changing model weights, through a propose-probe-compose loop on each task and a persistent improvement harness carried across tasks. Ships with OpenCode and Codex executors and the JobBench, LAB and WorkBuddy-Bench benchmarks.",
+    "fetchedAt": "2026-10-20T00:00:00.000Z"
+  },
+  "anthropics/claude-code-action": {
+    "description": "Anthropic's official GitHub Action for Claude Code: answers questions and implements changes in pull requests and issues when mentioned with @claude, reviews PR diffs, shows progress as updating checkboxes, and runs on your own GitHub runner with the Anthropic API, Amazon Bedrock, Google Vertex AI or Microsoft Foundry.",
+    "fetchedAt": "2026-10-20T00:00:00.000Z"
+  },
+  "alibaba/open-code-review": {
+    "description": "Secure, fast, efficient, battle-tested at Alibaba's scale. Hybrid architecture code review tool: deterministic pipelines + LLM Agent, precise line-level comments, built-in multi-language ruleset (NPE, thread-safety, XSS, SQL injection), OpenAI & Anthropic compatible.",
+    "fetchedAt": "2026-10-20T11:46:51.985Z"
+  },
+  "codewhale-hq/Codewhale": {
+    "description": "Open-source Rust agent engine and terminal client for Codewhale, with provider choice, tools, approvals and receipts.",
+    "fetchedAt": "2026-10-20T11:46:52.699Z"
+  },
+  "Twigpine/openclaude": {
+    "description": "runs anywhere. uses anything",
+    "fetchedAt": "2026-10-20T11:46:53.298Z"
+  },
+  "avante-corp/avante.nvim": {
+    "description": "Use your Neovim like using Cursor AI IDE!",
+    "fetchedAt": "2026-10-20T11:46:53.834Z"
+  },
+  "tester-army/e2e": {
+    "description": "Next generation e2e testing framework for web and mobile apps.",
+    "fetchedAt": "2026-10-20T11:46:54.355Z"
+  },
+  "herdrdev/herdr": {
+    "description": "the runtime your coding agents live on",
+    "fetchedAt": "2026-10-20T11:46:54.874Z"
+  },
+  "google/ax": {
+    "description": "Agent Executor (AX) is Google's open agentic orchestration runtime",
+    "fetchedAt": "2026-10-20T11:46:55.481Z"
+  },
+  "msitarzewski/agency-agents": {
+    "description": "A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.",
+    "fetchedAt": "2026-10-20T11:46:55.977Z"
+  },
+  "Fission-AI/OpenSpec": {
+    "description": "Spec-driven development (SDD) for AI coding assistants.",
+    "fetchedAt": "2026-10-20T11:46:56.521Z"
+  },
+  "vercel-labs/skills": {
+    "description": "The open agent skills tool - npx skills",
+    "fetchedAt": "2026-10-20T11:46:57.119Z"
+  },
+  "davila7/claude-code-templates": {
+    "description": "CLI tool for configuring and monitoring Claude Code",
+    "fetchedAt": "2026-10-20T11:46:57.603Z"
+  },
+  "cursor/plugins": {
+    "description": "Cursor plugin specification and official plugins",
+    "fetchedAt": "2026-10-20T11:46:58.188Z"
+  },
+  "open-gsd/gsd-core": {
+    "description": "Git. Ship. Done - Core",
+    "fetchedAt": "2026-10-20T11:46:58.712Z"
+  },
+  "trailhq/Trail-Code": {
+    "description": "Turbocharge Claude Code, Cursor, Codex, Gemini & every coding agent: faster, cheaper, with contextual understanding specific to your codebase.",
+    "fetchedAt": "2026-10-20T11:46:59.211Z"
+  },
+  "farion1231/cc-switch": {
+    "description": "A cross-platform desktop All-in-One assistant for Claude Code, Codex, OpenCode, OpenClaw, Grok Build & Hermes Agent. Only official website: ccswitch.io",
+    "fetchedAt": "2026-10-20T11:46:59.884Z"
+  },
+  "rtk-ai/rtk": {
+    "description": "CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies",
+    "fetchedAt": "2026-10-20T11:47:00.459Z"
+  },
+  "diegosouzapw/OmniRoute": {
+    "description": "Never stop coding. Free MIT AI gateway: one endpoint, 375 providers (150+ free), 1,400+ models Kimi, Claude, GPT, Gemini, GLM, DeepSeek, MiniMax. Works with Claude Code, Codex, Cursor, OpenCode, Cline & Copilot. Quota-aware auto-fallback, RTK+Caveman compression saves 15-95% tokens, MCP/A2A, Desktop/PWA. Built by 900+ contributors",
+    "fetchedAt": "2026-10-20T11:47:00.941Z"
+  },
+  "mksglu/context-mode": {
+    "description": "Context window optimization for AI coding agents. Sandboxes tool output (98% reduction), persists session memory, and   enforces routing across 17 platforms via MCP + hooks.",
+    "fetchedAt": "2026-10-20T11:47:01.435Z"
+  },
+  "yetone/magpie": {
+    "description": "Every agent's model. One place. Codex on DeepSeek, Claude Code on Kimi, from the menu bar.",
+    "fetchedAt": "2026-10-20T11:47:01.914Z"
+  },
+  "HKUDS/CLI-Anything": {
+    "description": "\"CLI-Anything: Making ALL Software Agent-Native\" -- CLI-Hub: https://clianything.cc/",
+    "fetchedAt": "2026-10-20T11:47:02.460Z"
+  },
+  "getsentry/toolkit": {
+    "description": "Agentic tooling for Sentry",
+    "fetchedAt": "2026-10-20T11:47:03.023Z"
+  },
+  "D4Vinci/Scrapling": {
+    "description": "🕷️ A Web Scraping framework that handles everything from a single request to a full-scale crawl! Don't be shy, join here: https://discord.gg/EMgGbDceNQ and follow here for daily tips and tricks: https://x.com/Scrapling_dev",
+    "fetchedAt": "2026-10-20T11:47:03.507Z"
+  },
+  "trycua/cua": {
+    "description": "Scale computer-use 2.0 with open-source drivers, cross-OS sandboxes, and benchmarks for training, evaluation, and data generation.",
+    "fetchedAt": "2026-10-20T11:47:04.077Z"
+  },
+  "browser-use/jev-ultrafast": {
+    "description": "Fastest and cheapest web agent",
+    "fetchedAt": "2026-10-20T11:47:04.684Z"
+  },
+  "lexmount/moli": {
+    "description": "Best headless browser for AI agents. Lite, Fast, High-Compatibility. Built in Rust",
+    "fetchedAt": "2026-10-20T11:47:05.216Z"
+  },
+  "google/artemis": {
+    "description": "ARTEMIS turns natural-language instructions into reliable Android automation. It automates end-to-end workflows, captures logs, and integrates seamlessly with AI coding assistants such as Antigravity, Codex, and Claude Code.  It also achieves 99%+ success rate on AndroidWorld Benchmark.",
+    "fetchedAt": "2026-10-20T11:47:05.775Z"
+  },
+  "VectifyAI/PageIndex": {
+    "description": "📑 PageIndex: Document Index for Vectorless, Reasoning-based RAG",
+    "fetchedAt": "2026-10-20T11:47:06.321Z"
+  },
+  "Tencent/WeKnora": {
+    "description": "Open-source LLM knowledge platform: turn raw documents into a queryable RAG, an autonomous reasoning agent, and a self-maintaining Wiki.",
+    "fetchedAt": "2026-10-20T11:47:06.923Z"
+  },
+  "ifixai-ai/iFixAi": {
+    "description": "Independent Auditing of AI Agents. Run by human or the agent itself, to answer the most crucial question in the AI Agent Economy. Is the agent doing what is supposed to do? With iFixAi you can have this answer in less than 120 seconds.",
+    "fetchedAt": "2026-10-20T11:47:07.460Z"
+  },
+  "NVIDIA/OpenShell": {
+    "description": "OpenShell is the safe, private runtime for autonomous AI agents.",
+    "fetchedAt": "2026-10-20T11:47:08.119Z"
+  },
+  "morluto/rea": {
+    "description": "Reverse engineer anything with agents, from app behavior down to native binaries.",
+    "fetchedAt": "2026-10-20T11:47:08.601Z"
+  },
+  "cloudflare/security-audit-skill": {
+    "description": "A coding-agent skill for multi-phase security audits with independently verified, machine-readable findings",
+    "fetchedAt": "2026-10-20T11:47:09.203Z"
+  },
+  "microsoft/BitNet": {
+    "description": "Official inference framework for 1-bit LLMs",
+    "fetchedAt": "2026-10-20T11:47:09.810Z"
+  },
+  "lyogavin/airllm": {
+    "description": "AirLLM 2.8T LLM inference with single 4GB GPU",
+    "fetchedAt": "2026-10-20T11:47:10.294Z"
+  },
+  "NandhaKishorM/laya": {
+    "description": "Non-autoregressive System 1 decision engine. Typed choice, score and yes/no decisions over any text in a single forward pass, in 100+ languages, with a router that picks the right checkpoint per request.",
+    "fetchedAt": "2026-10-20T11:47:10.768Z"
+  },
+  "Niko1221/Strata": {
+    "description": "Qwen3.8-Flash-Next on any consumer hardware: one-click install for Windows / Linux. Strata inference engine, OpenAI/Anthropic API on localhost, optional image input.",
+    "fetchedAt": "2026-10-20T11:47:11.325Z"
+  },
+  "LibreChat-AI/LibreChat": {
+    "description": "Enhanced ChatGPT Clone: Features Agents, MCP, Skills, DeepSeek, Anthropic, AWS, OpenAI, Responses API, Azure, Groq, o1, GPT-5, Mistral, OpenRouter, Vertex AI, Gemini, Artifacts, AI model switching, message search, Code Interpreter, langchain, DALL-E-3, OpenAPI Actions, Functions, Secure Multi-User Auth, Presets, open-source for self-hosting. Active",
+    "fetchedAt": "2026-10-20T11:47:11.908Z"
+  },
+  "TencentCloud/Octop": {
+    "description": "A smarter, self-hosted AI assistant — multi-user, multi-agent.",
+    "fetchedAt": "2026-10-20T11:47:12.446Z"
+  },
+  "career-ops-hq/career-ops": {
+    "description": "Open-source AI job search agent and job finder: scan job boards, score each job 1-5 against your CV before you apply, tailor an ATS-friendly resume and cover letter, get interview prep and a job application tracker. It helps you fill in each application; you press Submit. Runs locally in your AI coding CLI (Claude Code, Codex, OpenCode and more).",
+    "fetchedAt": "2026-10-20T11:47:12.989Z"
+  },
+  "hugohe3/ppt-master": {
+    "description": "AI turns documents or topics into real, native PowerPoint decks—with native shapes, transitions and animations, data-backed charts and tables on demand, audio narration from speaker notes, and support for your own .pptx templates. · by Hugo He",
+    "fetchedAt": "2026-10-20T11:47:13.513Z"
+  },
+  "MadsLorentzen/ai-job-search": {
+    "description": "The job search that runs on your machine. AI job application framework built on Claude Code: evaluate postings, tailor CVs, write cover letters, prep interviews. Fork it and own it.",
+    "fetchedAt": "2026-10-20T11:47:13.997Z"
+  },
+  "coreyhaines31/marketingskills": {
+    "description": "Marketing skills for Claude Code and AI agents. CRO, copywriting, SEO, analytics, and growth engineering.",
+    "fetchedAt": "2026-10-20T11:47:14.470Z"
+  },
+  "dream-num/univer": {
+    "description": "The Office Harness for AI Agents — Spreadsheets, Docs, Slides, Canvas, Relational Tables, and PDF in one runtime.",
+    "fetchedAt": "2026-10-20T11:47:14.985Z"
+  },
+  "Yuan1z0825/nature-skills": {
+    "description": "符合nature论文学术表达和科研绘图的Skill",
+    "fetchedAt": "2026-10-20T11:47:15.535Z"
+  },
+  "openbq-org/OpenBB": {
+    "description": "Open Data Platform for analysts, quants and AI agents.",
+    "fetchedAt": "2026-10-20T11:47:16.082Z"
+  },
+  "ahujasid/mcp-for-blender": {
+    "description": "Community plugin to control Blender 3D with any LLM of your choice. Not affiliated with the official Blender Foundation.",
+    "fetchedAt": "2026-10-20T11:47:16.552Z"
+  },
+  "earthtojake/text-to-cad": {
+    "description": "Give your agent CAD superpowers.",
+    "fetchedAt": "2026-10-20T11:47:17.030Z"
+  },
+  "wheresryan22/anatomy": {
+    "description": "An agent skill for creating detailed, interactive isometric illustrations of real-world machines and complex systems. Generates polished SVGs with optional WebGL shaders and 3D effects.",
+    "fetchedAt": "2026-10-20T11:47:17.546Z"
+  },
+  "remotion-dev/remotion": {
+    "description": "🎥      Make videos programmatically with React",
+    "fetchedAt": "2026-10-20T11:47:18.222Z"
+  },
+  "jamiepine/voicebox": {
+    "description": "The open-source AI voice studio. Clone, dictate, create.",
+    "fetchedAt": "2026-10-20T11:47:18.706Z"
+  },
+  "latent-spaces/brag": {
+    "description": "You built it. Now brag. Turn the project you just created into a short, shareable launch video with one command.",
+    "fetchedAt": "2026-10-20T11:47:19.250Z"
+  },
+  "k2-fsa/OmniVoice": {
+    "description": "High-Quality Voice Cloning TTS for 600+ Languages",
+    "fetchedAt": "2026-10-20T11:47:19.824Z"
+  },
+  "datawhalechina/hello-agents": {
+    "description": "📚 《从零开始构建智能体》——从零开始的智能体原理与实践教程",
+    "fetchedAt": "2026-10-20T11:47:20.352Z"
+  },
+  "shanraisshan/claude-code-best-practice": {
+    "description": "from vibe coding to agentic engineering - practice makes claude perfect",
+    "fetchedAt": "2026-10-20T11:47:20.804Z"
+  },
+  "jingyaogong/minimind": {
+    "description": "🧠 Train a 64M-parameter LLM from scratch in just 2h!",
+    "fetchedAt": "2026-10-20T11:47:21.261Z"
+  },
+  "bojieli/ai-agent-book": {
+    "description": "《深入理解 AI Agent：设计原理与工程实践》（李博杰 著）开源主仓库：全书正文、编译版 PDF 与按章配套代码",
+    "fetchedAt": "2026-10-20T11:47:21.720Z"
+  },
+  "patchy631/ai-engineering-hub": {
+    "description": "In-depth tutorials on LLMs, RAGs and real-world AI agent applications.",
+    "fetchedAt": "2026-10-20T11:47:22.219Z"
+  },
+  "mnfst/awesome-free-llm-apis": {
+    "description": "List of Permanent Free LLM API  (API Keys)",
+    "fetchedAt": "2026-10-20T11:47:22.755Z"
   }
 }

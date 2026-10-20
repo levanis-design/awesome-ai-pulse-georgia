@@ -28,8 +28,15 @@ const CATEGORY_COLOR: Record<string, string> = {
   finance: "#EAB308",
   memory: "#C084FC",
   codeintel: "#6366F1",
+  tokens: "#4ADE80",
   infra: "#2DD4BF",
+  orchestration: "#38BDF8",
+  agentinfra: "#A8A29E",
+  security: "#F43F5E",
+  assistants: "#E879F9",
+  research: "#FDE047",
   media: "#84CC16",
+  voice: "#FCA5A5",
   resources: "#94A3B8",
 };
 

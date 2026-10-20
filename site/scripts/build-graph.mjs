@@ -32,7 +32,13 @@ const CATEGORY_COLOR = {
   tokens: "#6FAE84",
   infra: "#7EB6C2",
   media: "#C386A2",
+  voice: "#D9A07F",
   resources: "#97A0AE",
+  orchestration: "#6FA3CF",
+  agentinfra: "#8FA9B8",
+  security: "#C98282",
+  assistants: "#C2A0C9",
+  research: "#B9B37A",
 };
 
 const HUB_ID = "claude-code";
