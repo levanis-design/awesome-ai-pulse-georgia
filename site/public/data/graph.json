@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-20T11:47:22.871Z",
+  "generated": "2026-10-20T12:27:58.050Z",
   "categories": [
     {
       "id": "coding",
@@ -252,7 +252,7 @@
       "label": "CodeWhale",
       "category": "coding",
       "url": "https://github.com/codewhale-hq/Codewhale",
-      "desc": "CodeWhale (ყოფილი DeepSeek-TUI) ღია კოდის coding agent-ია ტერმინალისთვის, რომელიც ნებისმიერ მოდელთან მუშაობს — 40+ ჩაშენებული provider, ნაგულისხმევად DeepSeek V4.1 Flash, და შენს კომპიუტერზე გაშვებული ლოკალური მოდელებიც (უკვე გაშვებულ Ollama-ს თავისით პოულობს). დავალებას აძლევ და ის რეპოს კითხულობს, ფაილებს არედაქტირებს და ბრძანებებს უშვებს, სანამ საქმე არ დასრულდება; shell-ის ბრძანებებზე ჯერ ნებართვას გთხოვს, `/undo` ბოლო მოთხოვნას აუქმებს, `/receipts` კი აჩვენებს, რომელი ფაილები შეცვალა, რა ბრძანებები გაუშვა და რომელ ვებ- და MCP-გამოძახებებს მიმართა. Rust-ში დაწერილი, MIT ლიცენზია, codewhale.net. თავდაპირველად DeepSeek-ზე მორგებული ხელსაწყო იყო — ახლა Aider-ისა და Codex CLI-ის მრავალპროვაიდერიანი ალტერნატივაა.",
+      "desc": "CodeWhale (ყოფილი DeepSeek-TUI) ღია კოდის coding agent-ია ტერმინალისთვის, რომელიც ნებისმიერ მოდელთან მუშაობს — 40+ ჩაშენებული provider, ნაგულისხმევად DeepSeek V4.1 Flash, და შენს კომპიუტერზე გაშვებული ლოკალური მოდელებიც (უკვე გაშვებულ Ollama-ს თავისით პოულობს). დავალებას აძლევ და ის რეპოს კითხულობს, ფაილებს არედაქტირებს და ბრძანებებს უშვებს, სანამ საქმე არ დასრულდება; shell-ის ბრძანებებზე ჯერ ნებართვას გთხოვს, `/undo` ბოლო მოთხოვნას აუქმებს, `/receipts` კი აჩვენებს, რომელი ფაილები შეცვალა, რა ბრძანებები გაუშვა და რომელ ვებ- და MCP-გამოძახებებს მიმართა. Rust-ში დაწერილი, MIT ლიცენზია, codewhale.net. თავდაპირველად DeepSeek-ზე მორგებული ხელსაწყო იყო; ახლა Aider-ისა და Codex CLI-ის მსგავსად ტერმინალში მუშაობს, ოღონდ ნებისმიერ provider-თან.",
       "descEn": "Open-source Rust agent engine and terminal client for Codewhale, with provider choice, tools, approvals and receipts.",
       "stars": 41000
     },
@@ -585,7 +585,7 @@
       "label": "OpenSpec",
       "category": "plugins",
       "url": "https://github.com/Fission-AI/OpenSpec",
-      "desc": "OpenSpec spec-driven development-ის (SDD) ფრეიმვორკია AI coding ასისტენტებისთვის: სანამ კოდის ერთი ხაზი დაიწერება, AI ჩვეულებრივ Markdown-ში წერს მოთხოვნებს კონკრეტული სცენარებით, შენ კი გეგმას ამოწმებ და ამტკიცებ. `/opsx:explore`-ით იდეას ერთად „გაიაზრებთ“, `/opsx:propose`-ით ცვლილებას შემოგთავაზებს; ახალი Stores (ბეტა) ერთ სპეციფიკაციას რამდენიმე რეპოსა და მთელ გუნდს შორის აზიარებს. 30+ AI ხელსაწყოსთან მუშაობს (Claude Code, Cursor, Copilot, Codex, Amazon Q და სხვ.); TypeScript, MIT, Node.js 20.19+. Spec Kit-ისა და GSD Core-ის (ასევე ამ კატეგორიაში) მსუბუქი, „ჯერ გეგმა, მერე კოდი“ ალტერნატივაა.",
+      "desc": "OpenSpec spec-driven development-ის (SDD) ფრეიმვორკია AI coding ასისტენტებისთვის: სანამ კოდის ერთი ხაზი დაიწერება, AI ჩვეულებრივ Markdown-ში წერს მოთხოვნებს კონკრეტული სცენარებით, შენ კი გეგმას ამოწმებ და ამტკიცებ. `/opsx:explore`-ით იდეას ერთად „გაიაზრებთ“, `/opsx:propose`-ით ცვლილებას შემოგთავაზებს; ახალი Stores (ბეტა) ერთ სპეციფიკაციას რამდენიმე რეპოსა და მთელ გუნდს შორის აზიარებს. 30+ AI ხელსაწყოსთან მუშაობს (Cursor, GitHub Copilot, Amazon Q, Codex და სხვ.); TypeScript, MIT, Node.js 20.19+. Spec Kit-ისა და GSD Core-ის (ასევე ამ კატეგორიაში) მსუბუქი, „ჯერ გეგმა, მერე კოდი“ ალტერნატივაა.",
       "descEn": "Spec-driven development (SDD) for AI coding assistants.",
       "stars": 72000
     },
@@ -657,7 +657,7 @@
       "label": "skills (npx skills)",
       "category": "plugins",
       "url": "https://github.com/vercel-labs/skills",
-      "desc": "skills Vercel-ის CLI-ია ღია agent skills ეკოსისტემისთვის — `npx skills`-ით skill-ებს ეძებ, აყენებ, ანახლებ და შლი 75-ზე მეტ coding agent-ში (OpenCode, Claude Code, Codex, Cursor და სხვ.) ერთი ბრძანებით და ერთნაირად. skill-ის დაყენება შეიძლება პროექტში, გლობალურად (`-g`) ან საერთოდ დაყენების გარეშე, ერთჯერადად გამოყენებაც; `skills init` ახალი skill-ის შაბლონს ქმნის, ექსპერიმენტული sync კი npm პაკეტებში ჩაშენებულ skill-ებს პროექტს უკავშირებს. TypeScript, MIT, კატალოგი — skills.sh. თუ ხშირად იყენებ სხვადასხვა skill-ს, ეს skill-ების „npm“ საბაზისო ხელსაწყოა.",
+      "desc": "skills Vercel-ის CLI-ია ღია agent skills ეკოსისტემისთვის — `npx skills`-ით skill-ებს ეძებ, აყენებ, ანახლებ და შლი 75-ზე მეტ coding agent-ში (OpenCode, Claude Code, Codex, Cursor და სხვ.) ერთი ბრძანებით და ერთნაირად. skill-ს პროექტში ან გლობალურად (`-g`) დააყენებ, ან საერთოდ დაყენების გარეშე, ერთჯერადად გამოიყენებ; `skills init` ახალი skill-ის შაბლონს ქმნის, ექსპერიმენტული sync კი npm პაკეტებში ჩაშენებულ skill-ებს პროექტს უკავშირებს. TypeScript, MIT, კატალოგი — skills.sh. თუ ხშირად იყენებ სხვადასხვა skill-ს, ეს skill-ების „npm“ საბაზისო ხელსაწყოა.",
       "descEn": "The open agent skills tool - npx skills",
       "stars": 36000
     },
@@ -765,7 +765,7 @@
       "label": "Cursor Plugins",
       "category": "plugins",
       "url": "https://github.com/cursor/plugins",
-      "desc": "Cursor Plugins Cursor-ის plugin-ების სპეციფიკაცია და ოფიციალური plugin-ების კოლექციაა: თითოეული plugin ცალკე საქაღალდეა საკუთარი `.cursor-plugin/plugin.json` manifest-ით. შიგნითაა გუნდური workflow-ები (CI, code review, shipping), Thermos — branch-ის „თერმობირთვული“ review უსაფრთხოებისა და სისწორის ღრმა აუდიტით, Ralph Loop, დიდი ამოცანების ღრუბლოვან აგენტებზე გადანაწილება (Orchestrate), PR-ებისა და დოკუმენტაციის canvas-ები, Cursor SDK და plugin-ების შექმნის ხელსაწყო. TypeScript; ლიცენზია რეპოში მითითებული არ არის. Cursor-ის მომხმარებლებისთვის — Claude Code-ის ოფიციალური plugin-ების (ასევე ამ კატეგორიაში) ანალოგი.",
+      "desc": "Cursor Plugins Cursor-ის plugin-ების სპეციფიკაცია და ოფიციალური plugin-ების კოლექციაა: თითოეული plugin ცალკე საქაღალდეა საკუთარი `.cursor-plugin/plugin.json` manifest-ით. შიგნითაა გუნდური workflow-ები (CI, code review, shipping), Thermos — branch-ის „თერმობირთვული“ review უსაფრთხოებისა და სისწორის ღრმა აუდიტით, Ralph Loop, დიდი ამოცანების ღრუბლოვან აგენტებზე გადანაწილება (Orchestrate), PR-ებისა და დოკუმენტაციის canvas-ები, Cursor SDK და plugin-ების შექმნის ხელსაწყო. TypeScript, MIT (README-ის მიხედვით). Cursor-ის მომხმარებლებისთვის — Claude Code-ის ოფიციალური plugin-ების (ასევე ამ კატეგორიაში) ანალოგი.",
       "descEn": "Cursor plugin specification and official plugins",
       "stars": 13000
     },
@@ -774,7 +774,7 @@
       "label": "GSD Core",
       "category": "plugins",
       "url": "https://github.com/open-gsd/gsd-core",
-      "desc": "GSD Core (ყოფილი GSD — Get Shit Done, ახლა „Git. Ship. Done.“) meta-prompting-ის, context engineering-ისა და spec-driven development-ის მსუბუქი სისტემაა Claude Code-ისთვის, OpenCode-ისთვის, Codex-ისთვის, Cursor-ისთვის, Copilot-ისთვის და სხვებისთვის. „კონტექსტის დაძველების“ პრობლემას წყვეტს — ხარისხის ვარდნას, რომელიც AI-ის კონტექსტის ფანჯრის შევსებასთან ერთად გროვდება: მძიმე კვლევა, დაგეგმვა და შესრულება სუფთა კონტექსტის subagent-ებში მიმდინარეობს, მთავარი სესია კი მსუბუქი რჩება, ყოველი ეტაპი კი ხუთსაფეხურიან ციკლს გადის (განხილვა → გეგმა → შესრულება → შემოწმება → გაშვება). JavaScript, MIT, opengsd.net; 2026 წლის მაისში ძველი gsd-build/get-shit-done რეპოდან ახალ ორგანიზაციაში გადავიდა. Superpowers-ისა და Spec Kit-ის (ასევე ამ კატეგორიაში) ალტერნატივაა.",
+      "desc": "GSD Core (ყოფილი GSD — Get Shit Done, ახლა „Git. Ship. Done.“) meta-prompting-ის, context engineering-ისა და spec-driven development-ის მსუბუქი სისტემაა Claude Code-ისთვის, OpenCode-ისთვის, Codex-ისთვის, Cursor-ისთვის, Copilot-ისთვის და სხვებისთვის. „კონტექსტის დაძველების“ პრობლემას წყვეტს — ხარისხის ვარდნას, რომელიც AI-ის კონტექსტის ფანჯრის შევსებასთან ერთად გროვდება: მძიმე კვლევა, დაგეგმვა და შესრულება სუფთა კონტექსტის subagent-ებში მიმდინარეობს, მთავარი სესია კი მსუბუქი რჩება. ყოველი ეტაპი ხუთსაფეხურიან ციკლს გადის: განხილვა → გეგმა → შესრულება → შემოწმება → გაშვება. JavaScript, MIT, opengsd.net; ძველი gsd-build/get-shit-done რეპო დაარქივდა და პროექტი აქ, GSD Core-ის სახელით გაგრძელდა. Superpowers-ისა და Spec Kit-ის (ასევე ამ კატეგორიაში) ალტერნატივაა.",
       "descEn": "Git. Ship. Done - Core",
       "stars": 11000
     },
@@ -972,7 +972,7 @@
       "label": "OmniRoute",
       "category": "tokens",
       "url": "https://github.com/diegosouzapw/OmniRoute",
-      "desc": "OmniRoute უფასო, MIT-ლიცენზიიანი AI gateway-ია: ერთი endpoint 375-ზე მეტი provider-ისთვის (მათ შორის 150+ უფასო tier-ით) და 1,400+ მოდელისთვის — Kimi, Claude, GPT, Gemini, GLM, DeepSeek, MiniMax. Claude Code-თან, Codex-თან, Cursor-თან, OpenCode-თან, Cline-თან და Copilot-თან მუშაობს; როცა ერთი ანგარიშის quota ამოიწურება, ავტომატურად შემდეგზე გადადის, ჩაშენებული RTK/Caveman შეკუმშვა კი ტოკენებს 15-95%-ით ზოგავს. TypeScript, MCP/A2A მხარდაჭერით, desktop/PWA აპით. მნიშვნელოვანია: უფასო tier-ები შენი საკუთარი ანგარიშებიდან მოდის — OmniRoute მათ ერთ ადგილას აგროვებს, თითოეული provider-ის პირობების დაცვა კი შენზეა.",
+      "desc": "OmniRoute უფასო, MIT-ლიცენზიიანი AI gateway-ია: ერთი endpoint 375 provider-ისთვის (მათ შორის 150+ უფასო tier-ით) და 1,400+ მოდელისთვის — Kimi, Claude, GPT, Gemini, GLM, DeepSeek, MiniMax. Claude Code-თან, Codex-თან, Cursor-თან, OpenCode-თან, Cline-თან და Copilot-თან მუშაობს; როცა ერთი ანგარიშის quota ამოიწურება, ავტომატურად შემდეგზე გადადის, ჩაშენებული RTK/Caveman შეკუმშვა კი ტოკენებს 15-95%-ით ზოგავს. TypeScript, MCP/A2A მხარდაჭერით, desktop/PWA აპით. მნიშვნელოვანია: უფასო tier-ები შენი საკუთარი ანგარიშებიდან მოდის — OmniRoute მათ ერთ ადგილას აგროვებს, თითოეული provider-ის პირობების დაცვა კი შენზეა.",
       "descEn": "Never stop coding. Free MIT AI gateway: one endpoint, 375 providers (150+ free), 1,400+ models Kimi, Claude, GPT, Gemini, GLM, DeepSeek, MiniMax. Works with Claude Code, Codex, Cursor, OpenCode, Cline & Copilot. Quota-aware auto-fallback, RTK+Caveman compression saves 15-95% tokens, MCP/A2A, Desktop/PWA. Built by 900+ contributors",
       "stars": 78000
     },
@@ -1071,7 +1071,7 @@
       "label": "magpie",
       "category": "tokens",
       "url": "https://github.com/yetone/magpie",
-      "desc": "magpie menu bar-ის აპი და ლოკალური gateway-ია, რომლითაც ყოველ coding agent-ს თავის მოდელს უნიშნავ ერთი ადგილიდან: Claude Code — Kimi-ზე, Codex — DeepSeek-ზე, Gemini CLI — GLM-ზე. API key-ს, ლოკალურ მოდელს ან უკვე გამოწერილ გეგმას იყენებ, quota-ს ამოწურვისას კი routing ჯგუფი შემდეგ ანგარიშზე ან მოდელზე გადადის ისე, რომ აგენტი შეცდომას ვერც კი ამჩნევს. 25+ აგენტს უჭერს მხარს; macOS, Windows, Linux (აპი, TUI, ვებ-UI და CLI), Docker და Termux; Go, MIT, avante.nvim-ის ავტორის პროექტი. გაითვალისწინე: გამოწერის (subscription) გეგმის სხვა აგენტში გამოყენებას ზოგი provider-ის წესები კრძალავს — ჯერ პირობები შეამოწმე.",
+      "desc": "magpie menu bar-ის აპი და ლოკალური gateway-ია, რომლითაც ყოველ coding agent-ს თავის მოდელს უნიშნავ ერთი ადგილიდან: Claude Code — Kimi-ზე, Codex — DeepSeek-ზე, Gemini CLI — GLM-ზე. API key-ს, ლოკალურ მოდელს ან უკვე გამოწერილ გეგმას იყენებ, quota-ს ამოწურვისას კი routing ჯგუფი შემდეგ ანგარიშზე ან მოდელზე გადადის ისე, რომ აგენტი შეცდომას ვერც კი ამჩნევს. 60-ზე მეტ აგენტს უჭერს მხარს; macOS, Windows, Linux (აპი, TUI, ვებ-UI და CLI), Docker და Termux; Go, MIT, avante.nvim-ის ავტორის პროექტი. გაითვალისწინე: სანამ გამოწერის (subscription) გეგმას სხვა აგენტში გამოიყენებ, ჯერ provider-ის პირობები შეამოწმე.",
       "descEn": "Every agent's model. One place. Codex on DeepSeek, Claude Code on Kimi, from the menu bar.",
       "stars": 17000
     },
@@ -1341,7 +1341,7 @@
       "label": "Harness²",
       "category": "frameworks",
       "url": "https://github.com/google-research/harness2",
-      "desc": "Harness² Google Research-ის ფრეიმვორკია „რეკურსიული agent harnessing“-ისთვის: აგენტი საკუთარ harness-ს — system prompt-ს, guardrail-ებს, მეხსიერებას, ხელსაწყოების ინსტრუქციებს, subagent-ებს, skill-ებს, სკრიპტებსა და plugin-ებს — თვითონ ხვეწავს, მოდელის წონების შეცვლის გარეშე. ამოცანის დონეზე propose-probe-compose ციკლით ცდის ცვლილებებს და შესრულებებს შორის განსხვავებიდან უკეთეს harness-ს აწყობს, ზედა დონეზე კი ნასწავლ გაკვეთილებს მომავალი ამოცანებისთვის ინახავს; ავტორების შედეგით ერთი ასეთი ნაბიჯი GLM-5-სა და Gemini 3.5 Flash-ს WorkBuddy-Bench-ზე 11.5 ქულამდე აუმჯობესებს. Python, Apache-2.0, OpenCode-ისა და Codex-ის executor-ებით; კვლევითი კოდია, რომელიც ერთ commit-ად გამოქვეყნდა. მათთვის, ვინც აგენტების თვითგაუმჯობესებას იკვლევს.",
+      "desc": "Harness² Google Research-ის ფრეიმვორკია „რეკურსიული agent harnessing“-ისთვის: აგენტი საკუთარ harness-ს — system prompt-ს, guardrail-ებს, მეხსიერებას, ხელსაწყოების ინსტრუქციებს, subagent-ებს, skill-ებს, სკრიპტებსა და plugin-ებს — თვითონ ხვეწავს, მოდელის წონების შეცვლის გარეშე. ამოცანის დონეზე propose-probe-compose ციკლით ცდის ცვლილებებს და შესრულებებს შორის განსხვავებიდან უკეთეს harness-ს აწყობს, ზედა დონეზე კი ნასწავლ გაკვეთილებს მომავალი ამოცანებისთვის ინახავს; ავტორების შედეგით ერთი ასეთი ნაბიჯი GLM-5-სა და Gemini 3.5 Flash-ს WorkBuddy-Bench-ზე 11.5 ქულამდე აუმჯობესებს. Python, Apache-2.0, OpenCode-ისა და Codex-ის executor-ებით; კვლევითი კოდია და Google-ის ოფიციალურად მხარდაჭერილი პროდუქტი არ არის. მათთვის, ვინც აგენტების თვითგაუმჯობესებას იკვლევს.",
       "descEn": "Harness² from Google Research: a plug-and-play framework for recursive agent harnessing. An agent refines its own harness (system prompt, guardrails, memory, tool guidance, subagents, skills, scripts and plugins) without changing model weights, through a propose-probe-compose loop on each task and a persistent improvement harness carried across tasks. Ships with OpenCode and Codex executors and the JobBench, LAB and WorkBuddy-Bench benchmarks.",
       "stars": 11000
     },
@@ -1413,7 +1413,7 @@
       "label": "CLI-Anything",
       "category": "mcp",
       "url": "https://github.com/HKUDS/CLI-Anything",
-      "desc": "CLI-Anything ნებისმიერ პროგრამას „აგენტისთვის მშობლიურს“ ხდის: GIMP-ს, Blender-ს, LibreOffice-ს, QGIS-ს, Obsidian-ს და ათობით სხვა desktop აპს სრულფასოვან command-line ინტერფეისად (CLI harness) აქცევს, რომელსაც Claude Code, Cursor, OpenClaw ან nanobot ჩვეულებრივი ტერმინალის ბრძანებასავით მართავს. საზოგადოების მიერ აწყობილი CLI-ები CLI-Hub-ზე გროვდება და ერთი ბრძანებით დგება (`cli-hub install`). Python, Apache-2.0, ჰონგ-კონგის უნივერსიტეტის HKUDS ლაბორატორიიდან. GUI-ზე „დაწკაპუნების“ ნაცვლად აგენტი სწრაფ, განმეორებად ბრძანებებს იყენებს — computer use-ის უფრო საიმედო ალტერნატივაა.",
+      "desc": "CLI-Anything ნებისმიერ პროგრამას „აგენტისთვის მშობლიურს“ ხდის: GIMP-ს, Blender-ს, LibreOffice-ს, QGIS-ს, Obsidian-ს და ათობით სხვა desktop აპს სრულფასოვან command-line ინტერფეისად (CLI harness) აქცევს, რომელსაც Claude Code, Cursor, OpenClaw ან nanobot ჩვეულებრივი ტერმინალის ბრძანებასავით მართავს. საზოგადოების მიერ აწყობილი CLI-ები CLI-Hub-ზე გროვდება და ერთი ბრძანებით დგება (`cli-hub install`). Python, Apache-2.0; HKUDS-ის პროექტია — იმ გუნდის, რომელმაც nanobot და LightRAG შექმნა (ორივე ამ კოლექციაშია). GUI-ზე „დაწკაპუნების“ ნაცვლად აგენტი სწრაფ, განმეორებად ბრძანებებს იყენებს — computer use-ის უფრო საიმედო ალტერნატივაა.",
       "descEn": "\"CLI-Anything: Making ALL Software Agent-Native\" -- CLI-Hub: https://clianything.cc/",
       "stars": 55000
     },
@@ -1512,7 +1512,7 @@
       "label": "Sentry Toolkit",
       "category": "mcp",
       "url": "https://github.com/getsentry/toolkit",
-      "desc": "Sentry Toolkit Sentry-ის ოფიციალური რეპოა აგენტებისთვის: Sentry MCP სერვერი და Sentry CLI ერთად (ადრე getsentry/sentry-mcp ერქვა). MCP სერვერი Sentry API-ის შუამავალია, coding აგენტებისთვის (Cursor, Claude Code) მორგებული: AI ასისტენტს error report-ებზე, stack trace-ებზე, issue-ებზე, trace-ებსა და performance მონაცემებზე წვდომა ეძლევა, Claude Code-ში კი plugin-ად დგება და `sentry-mcp` subagent-ს ამატებს. TypeScript; remote სერვისი — mcp.sentry.dev, self-hosted Sentry-სთვის — stdio რეჟიმი. Production bug-ების AI-ასისტირებული დიაგნოსტიკისთვის შეუცვლელია.",
+      "desc": "Sentry Toolkit Sentry-ის ოფიციალური რეპოა აგენტებისთვის: Sentry MCP სერვერი და Sentry CLI ერთად (ადრე getsentry/sentry-mcp ერქვა). MCP სერვერი Sentry API-ის შუამავალია, coding აგენტებისთვის (Cursor, Claude Code) მორგებული: AI ასისტენტს Sentry-ის შეცდომებზე, issue-ებზე, trace-ებსა და performance მონაცემებზე წვდომა ეძლევა, Claude Code-ში კი plugin-ად დგება და `sentry-mcp` subagent-ს ამატებს. TypeScript; remote სერვისი — mcp.sentry.dev, self-hosted Sentry-სთვის — stdio რეჟიმი. Production bug-ების AI-ასისტირებული დიაგნოსტიკისთვის შეუცვლელია.",
       "descEn": "Agentic tooling for Sentry",
       "stars": 934
     },
@@ -1602,7 +1602,7 @@
       "label": "Cua",
       "category": "scraping",
       "url": "https://github.com/trycua/cua",
-      "desc": "Cua AI აგენტებს ნამდვილ კომპიუტერებს აძლევს: Cua Spaces დესკტოპ აპია, რომელიც შენს Mac-ზე, საკუთარ მანქანებზე ან შენს ღრუბლოვან ანგარიშზე (AWS, Google Cloud, Modal) აგენტებისთვის სრულ macOS ან Linux desktop-ებს ქმნის — შეგიძლია მასში უკვე შესული Chrome ან Slack „გადაიტანო“ და აგენტთან ერთად, თითოეულმა საკუთარი კურსორით, ერთ desktop-ზე იმუშაო. რეპოშივეა Cua Driver (native აპების მართვა macOS-ზე, Windows-სა და Linux-ზე CLI-ით, MCP-ით ან SDK-ით), Lume ლოკალური VM-ებისთვის, CUA-S1 მცირე მოდელები და Cua Bench computer-use აგენტების შესაფასებლად. Rust/Python, MIT; Spaces აპი FSL-1.1-MIT ლიცენზიითაა და ინდივიდებისთვის უფასოა. computer use-ის ინფრასტრუქტურის ერთ-ერთი ყველაზე სრული ღია ნაკრებია.",
+      "desc": "Cua AI აგენტებს ნამდვილ კომპიუტერებს აძლევს: Cua Spaces დესკტოპ აპია, რომელიც შენს Mac-ზე, საკუთარ მანქანებზე ან შენს ღრუბლოვან ანგარიშზე (AWS, Google Cloud, Modal) აგენტებისთვის სრულ macOS ან Linux desktop-ებს ქმნის — შეგიძლია მასში უკვე შესული Chrome ან Slack „გადაიტანო“ და აგენტთან ერთად, თითოეულმა საკუთარი კურსორით, ერთ desktop-ზე იმუშაო. რეპოშივეა Cua Driver (native აპების მართვა macOS-ზე, Windows-სა და Linux-ზე CLI-ით, MCP-ით ან SDK-ით), Lume ლოკალური VM-ებისთვის, CUA-S1 მცირე მოდელები და Cua Bench computer-use აგენტების შესაფასებლად. ძირითადად Rust-ში, SDK-ებით Python-სა და TypeScript-ზე, MIT; Spaces აპი FSL-1.1-MIT ლიცენზიითაა და ინდივიდებისთვის უფასოა. computer use-ის ინფრასტრუქტურის ერთ-ერთი ყველაზე სრული ღია ნაკრებია.",
       "descEn": "Scale computer-use 2.0 with open-source drivers, cross-OS sandboxes, and benchmarks for training, evaluation, and data generation.",
       "stars": 30000
     },
@@ -2061,7 +2061,7 @@
       "label": "OpenShell",
       "category": "agentinfra",
       "url": "https://github.com/NVIDIA/OpenShell",
-      "desc": "OpenShell NVIDIA-ს უსაფრთხო, კერძო runtime-ია ავტონომიური AI აგენტების მთელი „ფლოტისთვის“: აგენტს ფაილების კითხვის, პაკეტების დაყენების, API-ების გამოძახებისა და credential-ების გამოყენების საშუალებას აძლევს ისე, რომ შენს მონაცემებზე, საიდუმლოებებსა და ქსელზე შეუზღუდავი წვდომა არ მიიღოს. რას შეეხება თითოეული აგენტი, პოლიტიკაში წერ: kernel-ის დონეზე ყოველი ფაილი, სისტემური გამოძახება და ქსელური კავშირი მოწმდება, აგენტი ნამდვილ credential-ებს ვერასოდეს ხედავს, ხოლო პოლიტიკის ცვლილებას, რომელიც ახალ წვდომას ხსნის, ფორმალური ვერიფიკაცია ამოწმებს და ადამიანის დასტურამდე აჩერებს. Rust, Apache-2.0; Linux, Apple Silicon-იანი macOS ან WSL 2, Docker/Podman-ით, Kubernetes-ისთვის Helm chart-ით. NemoClaw-ის (ასევე ამ კოლექციაში) უსაფრთხოების საფუძველია.",
+      "desc": "OpenShell NVIDIA-ს უსაფრთხო, კერძო runtime-ია ავტონომიური AI აგენტების მთელი „ფლოტისთვის“: აგენტს ფაილების კითხვის, პაკეტების დაყენების, API-ების გამოძახებისა და credential-ების გამოყენების საშუალებას აძლევს ისე, რომ შენს მონაცემებზე, საიდუმლოებებსა და ქსელზე შეუზღუდავი წვდომა არ მიიღოს. რას შეეხება თითოეული აგენტი, პოლიტიკაში წერ: kernel-ის დონეზე ყოველი ფაილი, სისტემური გამოძახება და ქსელური კავშირი მოწმდება, აგენტი ნამდვილ credential-ებს ვერასოდეს ხედავს, ხოლო პოლიტიკის ცვლილებას, რომელიც ახალ წვდომას ხსნის, ფორმალური ვერიფიკაცია ამოწმებს და ადამიანის დასტურამდე აჩერებს. Rust, Apache-2.0; Linux, Apple Silicon-იანი macOS ან WSL 2 (ექსპერიმენტულად), Docker/Podman-ით, Kubernetes-ისთვის Helm chart-ით. NemoClaw-ის (ასევე ამ კოლექციაში) უსაფრთხოების საფუძველია.",
       "descEn": "OpenShell is the safe, private runtime for autonomous AI agents.",
       "stars": 17000
     },
@@ -2115,7 +2115,7 @@
       "label": "REA",
       "category": "security",
       "url": "https://github.com/morluto/rea",
-      "desc": "REA (Reverse Engineer Anything) ერთი MCP სერვერია reverse engineering-ისთვის — AI აგენტს (Claude Code, Codex, Cursor, Gemini CLI) ასწავლის, საწყისი კოდის გარეშე გამოიკვლიოს, როგორ მუშაობს ესა თუ ის ფუნქცია მზა პროგრამაში: native binary-ები, JavaScript და Electron აპები, .NET assembly-ები და ვებსაიტები. ანალიზი ლოკალურად მიდის, native ნაწილისთვის უკვე დაყენებულ Hopper-ს, Ghidra-ს ან IDA-ს იყენებს და ყოველ დასკვნას მტკიცებულებასა და შეზღუდვებს ურთავს. TypeScript, MIT, rea.tools; ერთი ბრძანებით დგება (`npx rea-agents setup`). ⚠️ გამოიყენე მხოლოდ კანონიერი კვლევისთვის და გადმოწერე მხოლოდ ოფიციალური წყაროდან — ქსელში მავნე ყალბი ასლები ვრცელდება.",
+      "desc": "REA (Reverse Engineer Anything) ერთი MCP სერვერია reverse engineering-ისთვის — AI აგენტს (Claude Code, Codex, Cursor, Gemini CLI) ასწავლის, საწყისი კოდის გარეშე გამოიკვლიოს, როგორ მუშაობს ესა თუ ის ფუნქცია მზა პროგრამაში: native binary-ები, JavaScript და Electron აპები, .NET assembly-ები და ვებსაიტები. ანალიზი ლოკალურად მიდის, native ნაწილისთვის უკვე დაყენებულ Hopper-ს, Ghidra-ს ან IDA-ს იყენებს და ყოველ დასკვნას მტკიცებულებასა და შეზღუდვებს ურთავს. TypeScript, MIT, rea.tools; ერთი ბრძანებით დგება (`npx rea-agents setup`). ⚠️ გამოიყენე მხოლოდ კანონიერი კვლევისთვის და გადმოწერე მხოლოდ ოფიციალური წყაროებიდან (morluto/rea, rea.tools, npm-ის rea-agents) — ავტორების გაფრთხილებით, მსგავსი სახელის რეპო ან კოპირებული README ოფიციალურობას არ ნიშნავს.",
       "descEn": "Reverse engineer anything with agents, from app behavior down to native binaries.",
       "stars": 335000
     },
@@ -2142,7 +2142,7 @@
       "label": "Security Audit Skill",
       "category": "security",
       "url": "https://github.com/cloudflare/security-audit-skill",
-      "desc": "Security Audit Skill Cloudflare-ის skill-ია, რომელიც coding agent-ს უსაფრთხოების აუდიტორად აქცევს: იზოლირებული აგენტები აუდიტს ექვს ფაზად ატარებენ — არქიტექტურისა და შეტევის ზედაპირის რუკა, დაფარვაზე ორიენტირებული „ნადირობა“, ყოველი კანდიდატის გადამოწმება ცალკე აგენტის მიერ, რომელიც მის უარყოფას ცდილობს, მანქანურად წაკითხვადი დასკვნები (confirmed / needs_validation / rejected) და საბოლოო ანგარიში. სწორედ ამ skill-იდან გაიზარდა Cloudflare-ის შიდა vulnerability discovery სისტემა; განმეორებითი გაშვებები წინა შედეგებს ეყრდნობა და მხოლოდ გამოტოვებულ ადგილებს ავსებს. JavaScript, MIT. ⚠️ გამოიყენე მხოლოდ საკუთარ ან ნებადართულ კოდზე.",
+      "desc": "Security Audit Skill Cloudflare-ის skill-ია, რომელიც coding agent-ს უსაფრთხოების აუდიტორად აქცევს: იზოლირებული აგენტები აუდიტს ექვს ფაზად ატარებენ — არქიტექტურისა და შეტევის ზედაპირის რუკა, დაფარვაზე ორიენტირებული „ნადირობა“, ყოველი კანდიდატის გადამოწმება ცალკე აგენტის მიერ, რომელიც მის უარყოფას ცდილობს, მანქანურად წაკითხვადი დასკვნები (confirmed / needs_validation / rejected) და საბოლოო ანგარიში. სწორედ ამ skill-იდან გაიზარდა Cloudflare-ის შიდა vulnerability discovery სისტემა; განმეორებითი გაშვებები წინა შედეგებს ეყრდნობა — ჯერ შეუმოწმებელ ადგილებს მიზანმიმართულად იკვლევს და შეცვლილ კოდს ხელახლა ამოწმებს. JavaScript, MIT. ⚠️ გამოიყენე მხოლოდ საკუთარ ან ნებადართულ კოდზე.",
       "descEn": "A coding-agent skill for multi-phase security audits with independently verified, machine-readable findings",
       "stars": 32000
     },
@@ -2268,7 +2268,7 @@
       "label": "AirLLM",
       "category": "infra",
       "url": "https://github.com/lyogavin/airllm",
-      "desc": "AirLLM დიდ ენობრივ მოდელებს პატარა ვიდეობარათზე უშვებს: მოდელს შრე-შრე დისკიდან „სტრიმავს“, ამიტომ 70B მოდელი ერთ 4 GB-იან GPU-ზე ეტევა — კვანტიზაციის, დისტილაციისა და pruning-ის გარეშე. ავტორების გაზომვით Kimi K3 (2.8T) 4 GB-ზე ნაკლებ ვიდეომეხსიერებას იკავებს, DeepSeek-V3 (671B) კი ~12 GB-ს, 2026 წლის სექტემბრიდან კი დიდი მოდელების მცირე VRAM-ზე წვრთნაც შეიძლება. Python, Apache-2.0; ერთი `AutoModel`-ით Qwen-ს, Llama-ს, DeepSeek-ს, Phi-სა და Gemma-ს უჭერს მხარს, macOS-ზეც. შრეების დისკიდან კითხვის გამო გენერაცია ნელია, ამიტომ ექსპერიმენტებისა და batch-ამოცანებისთვის უფრო გამოდგება, ვიდრე ცოცხალი ჩატისთვის.",
+      "desc": "AirLLM დიდ ენობრივ მოდელებს პატარა ვიდეობარათზე უშვებს: მოდელს შრე-შრე დისკიდან „სტრიმავს“, ამიტომ 70B მოდელი ერთ 4 GB-იან GPU-ზე ეტევა — კვანტიზაციის, დისტილაციისა და pruning-ის გარეშე. ავტორების გაზომვით Kimi K3 (2.8T) 4 GB-ზე ნაკლებ ვიდეომეხსიერებას იკავებს, DeepSeek-V3 (671B) კი ~12 GB-ს; 2026 წლის სექტემბრიდან დიდი მოდელების მცირე VRAM-ზე წვრთნაც შეიძლება. Python, Apache-2.0; ერთი `AutoModel`-ით Qwen-ს, Llama-ს, DeepSeek-ს, Phi-სა და Gemma-ს უჭერს მხარს, macOS-ზე (მხოლოდ Apple Silicon) კი ჯერ მხოლოდ Llama-ს ტიპის მოდელები ეშვება. შრეების დისკიდან კითხვის გამო გენერაცია ნელია, ამიტომ ექსპერიმენტებისა და batch-ამოცანებისთვის უფრო გამოდგება, ვიდრე ცოცხალი ჩატისთვის.",
       "descEn": "AirLLM 2.8T LLM inference with single 4GB GPU",
       "stars": 40000
     },
@@ -3168,7 +3168,7 @@
       "label": "text-to-cad",
       "category": "design",
       "url": "https://github.com/earthtojake/text-to-cad",
-      "desc": "text-to-cad აგენტს CAD-ის „ზესახელობას“ აძლევს: plugin-ია, რომლითაც Claude Code, Codex, Cursor, Gemini ან Grok ლოკალურად ქმნის 3D მოდელებს STEP, GLB, STL ან 3MF ფორმატებში, ამოწმებს, რამდენად დამზადებადია დეტალი (design for manufacturing), აგენერირებს საინჟინრო ნახაზებს და 3D ბეჭდვის, ფურცლოვანი ლითონისა და CNC დამზადების პოპულარულ სერვისებს უკავშირდება. მოდელებს საკუთარ CAD Viewer-ში აჩვენებს, Claude-ში კი პირდაპირ ჩატის ბარათად. Python, MIT, texttocad.dev; ნაგულისხმევად ანონიმურ სტატისტიკას აგზავნის (ფაილების, გზებისა და prompt-ების გარეშე), რომლის გამორთვაც ერთი ბრძანებით შეიძლება. ინჟინრებისა და მეიკერებისთვის, ვისაც სიტყვებით აღწერილი დეტალი ფიზიკურ ნაწილად უნდა აქციონ.",
+      "desc": "text-to-cad აგენტს CAD-ის „ზესახელობას“ აძლევს: plugin-ია, რომლითაც Claude Code, Codex, Cursor, Gemini ან Grok ლოკალურად ქმნის 3D მოდელებს STEP, GLB, STL ან 3MF ფორმატებში, ამოწმებს, რამდენად დამზადებადია დეტალი (design for manufacturing), აგენერირებს საინჟინრო ნახაზებს და 3D ბეჭდვის, ფურცლოვანი ლითონისა და CNC დამზადების პოპულარულ სერვისებს უკავშირდება. მოდელებს საკუთარ CAD Viewer-ში აჩვენებს, Claude-ში კი პირდაპირ ჩატის ბარათად. Python, MIT, texttocad.dev; ნაგულისხმევად გამოყენების სტატისტიკასა და crash-ანგარიშებს აგზავნის შემთხვევითი ID-ით, ფაილების, გზებისა და prompt-ების გარეშე — გამორთვა ერთი ბრძანებით შეიძლება. ინჟინრებისა და მეიკერებისთვის, ვისაც სიტყვებით აღწერილი დეტალი ფიზიკურ ნაწილად უნდა აქციონ.",
       "descEn": "Give your agent CAD superpowers.",
       "stars": 22000
     },
@@ -3474,7 +3474,7 @@
       "label": "OmniVoice",
       "category": "media",
       "url": "https://github.com/k2-fsa/OmniVoice",
-      "desc": "OmniVoice მაღალი ხარისხის zero-shot ხმის კლონირებისა და text-to-speech მოდელია 646 ენისთვის — ქართულის ჩათვლით (ტრენინგში დაახლოებით 157 საათი ქართული მეტყველებაა). diffusion language model-ის სტილის არქიტექტურის წყალობით სწრაფია (real-time-ზე 40-ჯერ სწრაფად), ხმას რამდენიმე წამიანი ნიმუშიდან აკლონებს, voice design-ით კი სქესს, ასაკს, ტემბრს, აქცენტსა და ჩურჩულსაც მართავ, არავერბალური ნიშნებითა (`[laughter]`) და გამოთქმის შესწორებით. k2-fsa-ს (Next-gen Kaldi-ს გუნდის) პროექტია; Python, Apache-2.0, ლოკალური ვებ-UI-ით, Hugging Face Space-ითა და Colab-ით. ქართულენოვანი გახმოვანების, აუდიოწიგნებისა და ხმოვანი ასისტენტებისთვის ერთ-ერთი საუკეთესო ღია ვარიანტია.",
+      "desc": "OmniVoice მაღალი ხარისხის zero-shot ხმის კლონირებისა და text-to-speech მოდელია 646 ენისთვის — ქართულის ჩათვლით (ტრენინგში დაახლოებით 157 საათი ქართული მეტყველებაა). diffusion language model-ის სტილის არქიტექტურის წყალობით სწრაფია (real-time-ზე 40-ჯერ სწრაფად), ხმას რამდენიმე წამიანი ნიმუშიდან აკლონებს, voice design-ით კი სქესს, ასაკს, ტონის სიმაღლეს, დიალექტს ან აქცენტს და ჩურჩულსაც მართავ, არავერბალური ნიშნებითა (`[laughter]`) და გამოთქმის შესწორებით. k2-fsa-ს პროექტია; Python, Apache-2.0, ლოკალური ვებ-UI-ით, Hugging Face Space-ითა და Colab-ით. ქართულენოვანი გახმოვანების, აუდიოწიგნებისა და ხმოვანი ასისტენტებისთვის ერთ-ერთი საუკეთესო ღია ვარიანტია.",
       "descEn": "High-Quality Voice Cloning TTS for 600+ Languages",
       "stars": 15000
     },
