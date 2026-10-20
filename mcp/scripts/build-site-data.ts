@@ -36,6 +36,7 @@ const CATEGORY_COLOR: Record<string, string> = {
   assistants: "#E879F9",
   research: "#FDE047",
   media: "#84CC16",
+  voice: "#FCA5A5",
   resources: "#94A3B8",
 };
 

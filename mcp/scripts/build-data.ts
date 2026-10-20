@@ -113,6 +113,11 @@ const CATEGORY_MAP: Record<string, Omit<Category, "georgian">> = {
     emoji: "🎬",
     english: "Media Generation",
   },
+  "ხმა და მეტყველება": {
+    slug: "voice",
+    emoji: "🎙️",
+    english: "Voice & Speech",
+  },
   "რესურსები და სასწავლო მასალები": {
     slug: "resources",
     emoji: "📚",
