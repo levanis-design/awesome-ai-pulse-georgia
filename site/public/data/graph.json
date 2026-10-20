@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-20T12:49:18.149Z",
+  "generated": "2026-10-20T13:13:30.441Z",
   "categories": [
     {
       "id": "coding",
@@ -95,6 +95,11 @@
       "id": "media",
       "label": "მედია-გენერაცია",
       "color": "#C386A2"
+    },
+    {
+      "id": "voice",
+      "label": "ხმა და მეტყველება",
+      "color": "#D9A07F"
     },
     {
       "id": "resources",
@@ -500,15 +505,6 @@
       "stars": 4500
     },
     {
-      "id": "claude-peers-mcp",
-      "label": "Claude Peers MCP",
-      "category": "orchestration",
-      "url": "https://github.com/louislva/claude-peers-mcp",
-      "desc": "Claude Peers MCP ლოკალური MCP სერვერია, რომელიც სხვადასხვა Claude Code სესიას ერთმანეთის აღმოჩენისა და real-time შეტყობინებების გაცვლის საშუალებას აძლევს. TypeScript-ში დაწერილია. თუ პარალელურად რამდენიმე პროექტზე მუშაობ სხვადასხვა Claude Code ინსტანციით, ისინი ერთმანეთთან კოორდინაციას შეძლებენ.",
-      "descEn": "Allow all your Claude Codes to message each other ad-hoc!",
-      "stars": 2200
-    },
-    {
       "id": "superpowers",
       "label": "Superpowers",
       "category": "plugins",
@@ -635,6 +631,15 @@
       "stars": 108000
     },
     {
+      "id": "awesome-cursorrules",
+      "label": "awesome-cursorrules",
+      "category": "plugins",
+      "url": "https://github.com/PatrickJS/awesome-cursorrules",
+      "desc": "awesome-cursorrules — Cursor-ის `.cursorrules` ფაილების კანონიკური კრებული სხვადასხვა ენისა და framework-ისთვის. AI coding agent-ის ქცევის კონფიგურაცია მზა შაბლონებით.",
+      "descEn": "📄  Configuration files that enhance Cursor AI editor experience with custom rules and behaviors",
+      "stars": 41000
+    },
+    {
       "id": "awesome-copilot",
       "label": "awesome-copilot",
       "category": "plugins",
@@ -678,6 +683,15 @@
       "desc": "I Have ADHD skill-ია coding ასისტენტისთვის, რომელიც პასუხის „ჩამარხვას\" უკრძალავს: ჯერ ქმედება, ნაბიჯები დანომრილი, არანაირი „Great question!\" და „Hope this helps!\". README-ს Before/After ნათლად აჩვენებს — მსჯელობის აბზაცის ნაცვლად „გაუშვი ეს ბრძანება, მერე შეასწორე ეს ფაილი 42-ე ხაზზე, მერე ტესტი\". ADHD-ის მქონე დეველოპერებისთვის დაიწერა, მაგრამ ყველას გამოადგება, ვისაც აგენტის სიტყვამრავლობა ღლის. Caveman-ის (ასევე ამ კოლექციაში) მონათესავე — ის ტოკენებს ზოგავს, ეს ყურადღებას. MIT, 2026 წლის მაისიდან.",
       "descEn": "A skill to stop your coding agent from burying the answer. ADHD-friendly output.",
       "stars": 58000
+    },
+    {
+      "id": "agent-skills-2",
+      "label": "Vercel Agent Skills",
+      "category": "plugins",
+      "url": "https://github.com/vercel-labs/agent-skills",
+      "desc": "Vercel Agent Skills — **Vercel-ის ოფიციალური** skill კოლექცია AI coding agent-ებისთვის: 8 skill, რომლებიც Vercel Engineering-ის შიდა handbook-ებს აგენტებისთვის გასაგებ ფორმატად აქცევს. **web-design-guidelines** UI კოდს 100+ წესით ამოწმებს (accessibility, focus states, forms, animation, typography, dark mode, i18n) — Vercel-ის ცნობილი Web Interface Guidelines-ის packaged ვერსია; **react-best-practices** 40+ React/Next.js performance წესს მოიცავს; **vercel-deploy-claimable** კი აპს პირდაპირ claude.ai საუბრიდან deploy-ს უკეთებს live preview URL-ით. `npx skills add vercel-labs/agent-skills`-ით ეყენება. JavaScript, MIT, skills.sh რეესტრის canonical მაგალითი. 2025 წლის დეკემბრიდან ვითარდება. ვიზუალურ design skill-ებისგან (UI UX Pro Max, Open Design) განსხვავებით აქცენტი engineering correctness-ზეა — accessibility და performance, არა მხოლოდ ესთეტიკა.",
+      "descEn": "Vercel's official collection of agent skills",
+      "stars": 33000
     },
     {
       "id": "claude-code-templates",
@@ -743,6 +757,24 @@
       "stars": 26000
     },
     {
+      "id": "agentskills",
+      "label": "Agent Skills Spec",
+      "category": "plugins",
+      "url": "https://github.com/agentskills/agentskills",
+      "desc": "Agent Skills Spec AI agent-ებისთვის skills-ის მიცემის ღია სტანდარტისა და სპეციფიკაციის კოლექციაა — write-once, use-everywhere პრინციპით. სრული სპეციფიკაციის დოკუმენტი, reference SDK და მაგალითი skill-ები. Python-ში, agentskills.io — დამოუკიდებელი, community-driven პროექტი. Claude Code, Codex და სხვა platform-ები ამ სტანდარტს მიჰყვებიან, თუმცა ეს Anthropic-ის ოფიციალური სტანდარტი არ არის.",
+      "descEn": "Specification and documentation for Agent Skills",
+      "stars": 26000
+    },
+    {
+      "id": "skillopt",
+      "label": "SkillOpt",
+      "category": "plugins",
+      "url": "https://github.com/microsoft/SkillOpt",
+      "desc": "SkillOpt Microsoft Research-ის ტექსტურ სივრცეში მომუშავე ოპტიმიზატორია, რომელიც agent skill-ებს ისე „ავარჯიშებს\", როგორც ნეირონულ ქსელებს — ეპოქებით, mini-batch-ებით, learning rate-ითა და validation კარიბჭეებით — ოღონდ მოდელის წონებს არ ეხება. გაყინული LLM-ისთვის მრავალჯერადი ბუნებრივენოვანი skill-ები ავტომატურად იხვეწება ამოცანების მონაცემებზე. 2026 წლის ივლისში Microsoft Research-ის ბლოგმა „agent skills as trainable parameters\" სათაურით გააშუქა. Python, MIT. Anthropic Skills-ის (ასევე ამ კოლექციაში) სამეცნიერო გაგრძელება.",
+      "descEn": "SkillOpt is a text-space optimizer that trains reusable natural-language skills for frozen LLM agents through trajectory-driven edits, validation-gated updates, and deployable best_skill.md artifacts.",
+      "stars": 19000
+    },
+    {
       "id": "stop-slop",
       "label": "stop-slop",
       "category": "plugins",
@@ -768,6 +800,15 @@
       "desc": "Cursor Plugins Cursor-ის plugin-ების სპეციფიკაცია და ოფიციალური plugin-ების კოლექციაა: თითოეული plugin ცალკე საქაღალდეა საკუთარი `.cursor-plugin/plugin.json` manifest-ით. შიგნითაა გუნდური workflow-ები (CI, code review, shipping), Thermos — branch-ის „თერმობირთვული“ review უსაფრთხოებისა და სისწორის ღრმა აუდიტით, Ralph Loop, დიდი ამოცანების ღრუბლოვან აგენტებზე გადანაწილება (Orchestrate), PR-ებისა და დოკუმენტაციის canvas-ები, Cursor SDK და plugin-ების შექმნის ხელსაწყო. TypeScript, MIT (README-ის მიხედვით). Cursor-ის მომხმარებლებისთვის — Claude Code-ის ოფიციალური plugin-ების (ასევე ამ კატეგორიაში) ანალოგი.",
       "descEn": "Cursor plugin specification and official plugins",
       "stars": 13000
+    },
+    {
+      "id": "loop-engineering",
+      "label": "Loop Engineering",
+      "category": "plugins",
+      "url": "https://github.com/cobusgreyling/loop-engineering",
+      "desc": "Loop Engineering Cobus Greyling-ის პრაქტიკული პატერნების, სტარტერებისა და CLI ხელსაწყოების კრებულია AI coding agent-ებთან „ციკლების ინჟინერიისთვის\" — დევიზით „Stop prompting. Design the loop. Get a score.\" `npx @cobusgreyling/loop init . --pattern daily-triage --tool claude` მზა ციკლის შაბლონს აყენებს (მაგალითად ყოველდღიური triage Claude-ისთვის), `loop doctor` კი არსებულ setup-ს აფასებს და ქულას აძლევს. იდეა: ერთჯერადი prompt-ის ნაცვლად განმეორებადი, გაზომვადი აგენტური ციკლი. MIT, 2026 წლის ივნისიდან; 12-Factor Agents-ის (ასევე ამ კოლექციაში) სულისკვეთებით.",
+      "descEn": "Practical patterns, starters & CLI tools for loop engineering with AI coding agents. Design systems that prompt and orchestrate agents (inspired by Addy Osmani and Boris Cherny). Includes loop-audit, loop-init, loop-cost.",
+      "stars": 12000
     },
     {
       "id": "gsd-core",
@@ -804,15 +845,6 @@
       "desc": "Qwen-MM-Plugins Qwen გუნდის ოფიციალური მულტიმოდალური plugin-ებია, რომლებიც ნებისმიერ agent harness-ს „მხედველობასა\" და აუდიოს ამატებს — ტექსტური მოდელიც კი სურათებს, ეკრანის ანაბეჭდებსა და ჩანაწერებს Qwen-ის მოდელებით „ხედავს\". სახელმძღვანელო ინსტალერი Claude Code-ს, Codex-ს, Gemini CLI-ს, OpenClaw-ს, Qwen Code-სა და Qoder-ს უჭერს მხარს; DeepSeek Harness-სა და Hermes-ში ხელით ეყენება. საერთო კონფიგურაცია `~/.qwen-mm-plugins/config`-ში ინახება. Apache-2.0, 2026 წლის ივლისიდან.",
       "descEn": "Make any agent harness multimodal-native.",
       "stars": 3100
-    },
-    {
-      "id": "claudish-to-english",
-      "label": "Claudish to English",
-      "category": "plugins",
-      "url": "https://github.com/gvzdv/claudish-to-english",
-      "desc": "Claudish to English Claude Code-ის plugin-ია, რომელიც ასისტენტის ყოველ პასუხს „უბრალო ენაზე\" გადაწერილ ვერსიას ურთავს — ჟარგონით დატვირთული, მკვრივი ტექსტის გვერდით გასაგები ახსნა. გადაწერას ლოკალური მოდელი აკეთებს ollama-ს გავლით (ნაგულისხმევად), ან codex CLI, Anthropic API თუ ნებისმიერი OpenAI-თავსებადი endpoint. მხოლოდ ეკრანზე ცვლის: Claude-ის მსჯელობა და შენახული ტრანსკრიპტი ხელუხლებელი რჩება. თუ სესია ინგლისურის გარდა სხვა ენაზე მიდის, გადაწერაც იმავე ენაზეა. ზუსტად იმ ადამიანებისთვის, ვინც კოდს ვერ კითხულობს, მაგრამ Claude Code-ით აშენებს. MIT, 2026 წლის აგვისტოდან.",
-      "descEn": "Claude Code plugin that shows a plain-English rewrite of each assistant message, produced by a local LLM via ollama (default), the codex CLI, the Anthropic API or any OpenAI-compatible API. Display-only: the saved transcript keeps the original text.",
-      "stars": 2700
     },
     {
       "id": "understand-anything",
@@ -1292,24 +1324,6 @@
       "stars": 18000
     },
     {
-      "id": "skillopt",
-      "label": "SkillOpt",
-      "category": "frameworks",
-      "url": "https://github.com/microsoft/SkillOpt",
-      "desc": "SkillOpt Microsoft Research-ის ტექსტურ სივრცეში მომუშავე ოპტიმიზატორია, რომელიც agent skill-ებს ისე „ავარჯიშებს\", როგორც ნეირონულ ქსელებს — ეპოქებით, mini-batch-ებით, learning rate-ითა და validation კარიბჭეებით — ოღონდ მოდელის წონებს არ ეხება. გაყინული LLM-ისთვის მრავალჯერადი ბუნებრივენოვანი skill-ები ავტომატურად იხვეწება ამოცანების მონაცემებზე. 2026 წლის ივლისში Microsoft Research-ის ბლოგმა „agent skills as trainable parameters\" სათაურით გააშუქა. Python, MIT. Anthropic Skills-ის (ასევე ამ კოლექციაში) სამეცნიერო გაგრძელება.",
-      "descEn": "SkillOpt is a text-space optimizer that trains reusable natural-language skills for frozen LLM agents through trajectory-driven edits, validation-gated updates, and deployable best_skill.md artifacts.",
-      "stars": 19000
-    },
-    {
-      "id": "pipecat",
-      "label": "Pipecat",
-      "category": "frameworks",
-      "url": "https://github.com/pipecat-ai/pipecat",
-      "desc": "Pipecat — production-დონის ხმის (voice) AI ფრეიმვორკი: sub-250ms latency, WebRTC, multimodal (ხმა+ხედვა+ტექსტი), real-time streaming და 70+ ენა. ხმის აგენტების (სატელეფონო, ასისტენტები) ასაშენებლად — Vapi/Retell-ის ღია ალტერნატივა.",
-      "descEn": "Production-grade voice AI agent framework — sub-250ms latency, WebRTC, multimodal, real-time streaming, 70+ languages.",
-      "stars": 17000
-    },
-    {
       "id": "agent-framework",
       "label": "Microsoft Agent Framework",
       "category": "frameworks",
@@ -1760,15 +1774,6 @@
       "stars": 2400
     },
     {
-      "id": "rdrr",
-      "label": "rdrr",
-      "category": "scraping",
-      "url": "https://github.com/fkonovalov/rdrr",
-      "desc": "rdrr არის TypeScript-ის CLI ინსტრუმენტი, რომელიც ნებისმიერ URL-ს AI-სთვის სუფთა Markdown-ად გარდაქმნის headless ბრაუზერის გარეშე. ვებ გვერდები, YouTube ვიდეოები, GitHub issues/PR-ები, PDF-ები და X/Twitter პოსტები — ყველა ერთი ბრძანებით. 20+ საიტ-სპეციფიკური extractor ჩაშენებულია, რაც HTML-ის ჩვეულებრივ parsing-ზე ბევრად სუფთა შედეგს იძლევა. CLI-ისა და ბიბლიოთეკის სახით გამოიყენება. 2026 წლის მარტში გამოშვებული ახალი პროექტია.",
-      "descEn": "Convert any URL to clean markdown for AI agents.",
-      "stars": 194
-    },
-    {
       "id": "markitdown",
       "label": "MarkItDown",
       "category": "memory",
@@ -1983,33 +1988,6 @@
       "desc": "Semantica graph-native ინფრასტრუქტურაა კონტექსტისა და „ანგარიშვალდებული\" AI სისტემებისთვის — ძვირი საწარმოო პლატფორმების ღია, დეველოპერზე ორიენტირებული ალტერნატივა. საწარმოს მონაცემებს ითვისებს, მთავარს ამოიღებს, context graph-სა და knowledge graph-ს აშენებს და მათზე გრაფის ანალიტიკასა და მიზეზობრივ მსჯელობას უშვებს — ყოველი გადაწყვეტილების წარმომავლობით (provenance). ონტოლოგიების მართვა, დეტერმინისტული მსჯელობა, სრული მიკვლევადობა, vendor lock-in-ის გარეშე. Python, MIT; 2025 წლის ივნისიდან არსებობს, 2026 წლის აგვისტოში ერთ თვეში 10,000 ვარსკვლავი მოაგროვა.",
       "descEn": "Graph-Native Infrastructure for Context and Accountable AI Systems",
       "stars": 14000
-    },
-    {
-      "id": "markdownify-mcp",
-      "label": "Markdownify MCP",
-      "category": "memory",
-      "url": "https://github.com/zcaceres/markdownify-mcp",
-      "desc": "Markdownify MCP ნებისმიერი ტიპის ფაილს Markdown-ად გარდაქმნის AI ასისტენტებისთვის — PDF, სურათები, Word, Excel, PowerPoint, YouTube ვიდეო (transcript), ვებ გვერდი, აუდიო. TypeScript-ში. AI-ს \"კვება\" ნებისმიერი ფორმატიდან — ერთი სერვერი ყველა კონვერსიისთვის. RAG pipeline-ებისა და document analysis workflow-ებისთვის.",
-      "descEn": "A Model Context Protocol server for converting almost anything to Markdown",
-      "stars": 3000
-    },
-    {
-      "id": "mcp-crawl4ai-rag",
-      "label": "Crawl4AI RAG",
-      "category": "memory",
-      "url": "https://github.com/coleam00/mcp-crawl4ai-rag",
-      "desc": "mcp-crawl4ai-rag — MCP სერვერი, რომელიც ვებ crawling-სა და RAG-ს ერთ pipeline-ში აერთებს AI კოდინგ ასისტენტებისა და აგენტებისთვის. AI ინტერნეტიდან ინფორმაციას Crawl4AI-ით აგროვებს, Supabase-ის ვექტორულ მონაცემთა ბაზაში ინახავს და შემდეგ ამ კონტექსტზე დაყრდნობით პასუხობს კითხვებს. Python-ში დაწერილი, Claude, Cursor, Cline-ში MCP-ით გამოიყენება. მცირე, ფოკუსირებული ხელსაწყო, რომელიც ახალი AI Agent workflow-ების სწრაფ პროტოტიპირებისთვის გამოდგება.",
-      "descEn": "Web Crawling and RAG Capabilities for AI Agents and AI Coding Assistants",
-      "stars": 2300
-    },
-    {
-      "id": "prism-coder",
-      "label": "Prism MCP",
-      "category": "memory",
-      "url": "https://github.com/dcostenco/prism-coder",
-      "desc": "Prism MCP — AI აგენტებისთვის შექმნილი HIPAA-სტანდარტის კოგნიტური არქიტექტურა, MCP პროტოკოლით. ჩაშენებული on-device LLM (prism-coder:7b), Hebbian learning-ი და ACT-R spreading activation-ი მეხსიერების ორგანიზაციას ადამიანის შემეცნებითი მოდელის მსგავსად ახდენს. API key-ები არ სჭირდება — სრულად ლოკალურად მუშაობს. multi-agent Hivemind სინქრონიზაცია, adversarial evaluation და ვიზუალური dashboard ჩაშენებულია. TypeScript-ში დაწერილი, ექიმებისა და regulated industries-ისთვის ვარგისი კონფიდენციალობის გათვალისწინებით.",
-      "descEn": "Persistent memory + local AI for coding agents. 1.7B–32B open-weight LLM fleet, cross-session Mind Palace, cognitive routing, L3 grounding verifier, multi-agent Hivemind. Works with Claude Code, Cursor, VS Code. Offline-first, HIPAA-ready. Free tier included.",
-      "stars": 157
     },
     {
       "id": "langfuse",
@@ -2379,15 +2357,6 @@
       "desc": "LM Studio CLI — LM Studio-ს ლოკალური AI პლატფორმის command-line interface, TypeScript-ში. გრაფიკულ აპლიკაციას ტერმინალიდან ავსებს: სერვერის გაშვება/გაჩერება, მოდელების ჩატვირთვა GPU acceleration-ით, model management და process monitoring. გამოსადეგია CI/CD pipeline-ებსა და automation script-ებში, სადაც GUI მიუწვდომელია — Ollama-ს ალტერნატივა მათთვის, ვისაც LM Studio-ს ვიზუალური ინტერფეისი ურჩევნია.",
       "descEn": "LM Studio CLI",
       "stars": 5400
-    },
-    {
-      "id": "h3-c",
-      "label": "h3.c",
-      "category": "infra",
-      "url": "https://github.com/antirez/h3.c",
-      "desc": "h3.c (h3-metal) Salvatore Sanfilippo-ს — Redis-ის შემქმნელის — native MiniMax-H3 ინფერენსია Apple Silicon-ისთვის, Metal-ზე. ვიდეო-აუდიო მოდელი Mac-ზე ლოკალურად ეშვება: prompt-ით ვიდეო და აუდიო, პირველი/ბოლო კადრით კონდიცირება და მოწესრიგებული reference-ები. პროექტი მომუშავე „ვერტიკალურ ნაჭრებად\" შენდება — ჯერ დეტერმინისტული მოდელის მეტამონაცემები, მერე Metal ბლოკების პარიტეტი, მერე გენერაცია. antirez-ის ds4-ის (ასევე ამ კოლექციაში) ძმა: იგივე „ვიწრო და თვითკმარი\" ფილოსოფია, ოღონდ ვიდეოსთვის. C, MIT, 2026 წლის აგვისტოდან.",
-      "descEn": "MiniMax H3 inference engine for Mac computers",
-      "stars": 2900
     },
     {
       "id": "n8n",
@@ -3092,24 +3061,6 @@
       "stars": 58000
     },
     {
-      "id": "ai-website-cloner-template",
-      "label": "ai-website-cloner-template",
-      "category": "design",
-      "url": "https://github.com/JCodesMore/ai-website-cloner-template",
-      "desc": "ai-website-cloner-template ნებისმიერი საიტის კლონირებას ერთი ბრძანებით ახდენს coding agent-ის დახმარებით — template, რომელსაც Claude Code-ს ან სხვა აგენტს აძლევ და ის საიტის სტრუქტურას, სტილსა და კომპონენტებს აღადგენს. TypeScript-ში დაწერილი — სწრაფი prototyping-ისა და redesign-ისთვის მოსახერხებელი საწყისი წერტილი.",
-      "descEn": "Clone any website with one command using AI coding agents",
-      "stars": 37000
-    },
-    {
-      "id": "agent-skills-2",
-      "label": "Vercel Agent Skills",
-      "category": "design",
-      "url": "https://github.com/vercel-labs/agent-skills",
-      "desc": "Vercel Agent Skills — **Vercel-ის ოფიციალური** skill კოლექცია AI coding agent-ებისთვის: 8 skill, რომლებიც Vercel Engineering-ის შიდა handbook-ებს აგენტებისთვის გასაგებ ფორმატად აქცევს. **web-design-guidelines** UI კოდს 100+ წესით ამოწმებს (accessibility, focus states, forms, animation, typography, dark mode, i18n) — Vercel-ის ცნობილი Web Interface Guidelines-ის packaged ვერსია; **react-best-practices** 40+ React/Next.js performance წესს მოიცავს; **vercel-deploy-claimable** კი აპს პირდაპირ claude.ai საუბრიდან deploy-ს უკეთებს live preview URL-ით. `npx skills add vercel-labs/agent-skills`-ით ეყენება. JavaScript, MIT, skills.sh რეესტრის canonical მაგალითი. 2025 წლის დეკემბრიდან ვითარდება. ვიზუალურ design skill-ებისგან (UI UX Pro Max, Open Design) განსხვავებით აქცენტი engineering correctness-ზეა — accessibility და performance, არა მხოლოდ ესთეტიკა.",
-      "descEn": "Vercel's official collection of agent skills",
-      "stars": 33000
-    },
-    {
       "id": "impeccable",
       "label": "Impeccable",
       "category": "design",
@@ -3117,6 +3068,15 @@
       "desc": "Impeccable **Paul Bakaus**-ის (ex-Google DevRel, Disney Interactive, jQuery UI core contributor — ერთ-ერთი ყველაზე ცნობილი front-end ინჟინერი 2010-იანების ვებზე) design-language skill-ია AI coding agent-ებისთვის — სლოგანი: *„The design language that makes your AI harness better at design\"*. Claude Code-ში, Codex-ში, Cursor-ში, OpenCode-ში და სხვა MCP-თავსებად client-ებში მუშაობს. JavaScript-ში, **Apache 2.0** ლიცენზიით, impeccable.style. 2025 წლის ნოემბერში გამოვიდა და სწრაფად გავრცელდა (fork-ების მაღალი წილი ორგანულ ინტერესზე მიუთითებს). **Open Design**-ის, **UI UX Pro Max**-ის და **Huashu Design**-ის ბუნებრივი მონათესავე — სამივესთან ერთად stacked design-skill კონფიგურაცია AI-ის visual output-ის ხარისხს professional დონეზე აყვანს.",
       "descEn": "The design language that makes your AI harness better at design.",
       "stars": 83000
+    },
+    {
+      "id": "ai-website-cloner-template",
+      "label": "ai-website-cloner-template",
+      "category": "design",
+      "url": "https://github.com/JCodesMore/ai-website-cloner-template",
+      "desc": "ai-website-cloner-template ნებისმიერი საიტის კლონირებას ერთი ბრძანებით ახდენს coding agent-ის დახმარებით — template, რომელსაც Claude Code-ს ან სხვა აგენტს აძლევ და ის საიტის სტრუქტურას, სტილსა და კომპონენტებს აღადგენს. TypeScript-ში დაწერილი — სწრაფი prototyping-ისა და redesign-ისთვის მოსახერხებელი საწყისი წერტილი.",
+      "descEn": "Clone any website with one command using AI coding agents",
+      "stars": 37000
     },
     {
       "id": "mcp-for-blender",
@@ -3272,15 +3232,6 @@
       "stars": 5000
     },
     {
-      "id": "designer-skills",
-      "label": "Designer Skills",
-      "category": "design",
-      "url": "https://github.com/Owl-Listener/designer-skills",
-      "desc": "Designer Skills — ყველაზე ყოვლისმომცველი დიზაინერული skill pack Claude Code-ისთვის: **91 skill და 28 ბრძანება 9 plugin-ში** — user research, design systems, UX strategy, UI design, interaction design, prototyping/testing, design ops, designer's toolkit და visual critique. ხუთრეპოიანი ოჯახის (ჯამში 239 skill და 33 plugin) მთავარი კარიბჭე. არქიტექტურა: skill-ები „არსებითი სახელებია\" (როგორ დაიწეროს persona, როგორ განისაზღვროს design token-ები), ბრძანებები კი „ზმნები\" — `/design-research:discover` ერთ workflow-ში რამდენიმე skill-ს აჯაჭვებს. ავტორი Marie-Claire Dean (MC Dean), ფილოსოფია: „taste, made legible\" — დიზაინერული განსჯა წერილობით ფორმაში, რომ აგენტმა გამოცნობა აღარ სცადოს. Claude Code-შიც და Gemini CLI-შიც მუშაობს, non-coder-ებზეც გათვლილია. Shell, MIT. 2026 წლის მარტიდან ვითარდება.",
-      "descEn": "Designer Skills Collection: agentic skills, commands, and plugins for design — from research to systems, UI, interaction, and delivery.",
-      "stars": 3000
-    },
-    {
       "id": "stable-diffusion-webui",
       "label": "Stable Diffusion WebUI",
       "category": "media",
@@ -3335,51 +3286,6 @@
       "stars": 65000
     },
     {
-      "id": "voicebox",
-      "label": "Voicebox",
-      "category": "media",
-      "url": "https://github.com/jamiepine/voicebox",
-      "desc": "Voicebox ღია, ლოკალური AI ხმის სტუდიაა — ElevenLabs-ისა და WisprFlow-ის უფასო ალტერნატივა ერთ აპში: რამდენიმე წამიანი ჩანაწერიდან ხმას აკლონებს, 8 TTS ძრავით (Qwen3-TTS, Chatterbox, Kokoro და სხვ.) 23 ენაზე მეტყველებას აგენერირებს, გლობალური hotkey-ით ნებისმიერ ტექსტურ ველში კარნახს იღებს (Whisper) და MCP-ით ნებისმიერ აგენტს — Claude Code-ს, Cursor-ს, Cline-ს — შენ მიერ არჩეული ხმით „ალაპარაკებს“. ეფექტები, ემოციური ტეგები (`[laugh]`, `[sigh]`), შეუზღუდავი სიგრძე და მრავალტრეკიანი რედაქტორი პოდკასტებისა და ნარატივისთვის; მოდელები და ხმის მონაცემები კომპიუტერს არ ტოვებს. Python, MIT, voicebox.sh. კონტენტის შემქმნელებისთვის, ვისაც ხმასთან მუშაობა ღრუბლის გარეშე სურს.",
-      "descEn": "The open-source AI voice studio. Clone, dictate, create.",
-      "stars": 58000
-    },
-    {
-      "id": "vibevoice",
-      "label": "VibeVoice",
-      "category": "media",
-      "url": "https://github.com/microsoft/VibeVoice",
-      "desc": "VibeVoice — **Microsoft-ის** frontier ღია ხმის მოდელების ოჯახი: real-time TTS (streaming, long-form) და unified ASR, რომელიც 60-წუთიან აუდიოს ერთ გავლაში ამუშავებს speaker/timestamp/content სტრუქტურით. ღია წონებით.",
-      "descEn": "Microsoft's open frontier voice AI models — real-time streaming TTS and unified long-form ASR (who/when/what).",
-      "stars": 55000
-    },
-    {
-      "id": "whisper-cpp",
-      "label": "whisper.cpp",
-      "category": "media",
-      "url": "https://github.com/ggml-org/whisper.cpp",
-      "desc": "whisper.cpp — OpenAI-ის Whisper speech-to-text მოდელის C/C++ port, Georgi Gerganov-ის მიერ (llama.cpp-ის შემქმნელი). GPU-ს გარეშეც მუშაობს — CPU-ზე, ARM-ზე, ტელეფონებზეც. 100-ზე მეტ ენაზე transcription-ს ასრულებს, ქართულის ჩათვლით. real-time streaming, speaker diarization, word-level timestamps მხარდაჭერილია. C++ ბიბლიოთეკა Python, Node.js, Go binding-ებითაც ხელმისაწვდომია. podcast-ების, ინტერვიუების, meeting-ების ავტომატური transcription-ისთვის ინდუსტრიული ინსტრუმენტია.",
-      "descEn": "Port of OpenAI's Whisper model in C/C++",
-      "stars": 54000
-    },
-    {
-      "id": "tts",
-      "label": "Coqui TTS",
-      "category": "media",
-      "url": "https://github.com/coqui-ai/TTS",
-      "desc": "Coqui TTS — ღია კოდის deep learning toolkit text-to-speech-ისთვის, Python-ში, კვლევასა და production-ში გამოცდილი. ხმის კლონირება 3-10 წამიანი ნიმუშიდანაა შესაძლებელი. 17-ზე მეტ ენაზე მუშაობს, მრავალი სხვადასხვა TTS არქიტექტურა ჩაშენებულია (VITS, YourTTS, Bark). შენიშვნა: Coqui AI კომპანია 2024 წელს დაიხურა და ეს repo 2024 წლის აგვისტოს შემდეგ აღარ განახლებულა — აქტიური ალტერნატივებია RealtimeTTS და OmniVoice (ასევე ამ კატეგორიაში).",
-      "descEn": "🐸💬 - a deep learning toolkit for Text-to-Speech, battle-tested in research and production",
-      "stars": 46000
-    },
-    {
-      "id": "bark",
-      "label": "Bark",
-      "category": "media",
-      "url": "https://github.com/suno-ai/bark",
-      "desc": "Bark — Suno AI-ის text-prompted generative audio model. ჩვეულებრივი TTS-ისგან განსხვავებით, Bark ქმნის არა მხოლოდ speech-ს, არამედ სიმღერებს, ხმოვან ეფექტებს, სიცილს, ტირილს, ოხვრასა და სხვა non-verbal ხმებს. 100-ზე მეტ ენაზე მუშაობს. Python/Jupyter-ში, Hugging Face-ზე ხელმისაწვდომი. შენიშვნა: Bark-ის განახლებები 2024 წლის აგვისტოში შეჩერდა, Suno AI ახლა მუსიკის გენერაციის კომერციულ პლატფორმაზეა ფოკუსირებული — repo community mode-შია. Coqui TTS-ის ალტერნატივა, რომელსაც მეტი expressive range აქვს.",
-      "descEn": "🔊 Text-Prompted Generative Audio Model",
-      "stars": 39000
-    },
-    {
       "id": "diffusers",
       "label": "Diffusers",
       "category": "media",
@@ -3416,24 +3322,6 @@
       "stars": 29000
     },
     {
-      "id": "voxcpm",
-      "label": "VoxCPM",
-      "category": "media",
-      "url": "https://github.com/OpenBMB/VoxCPM",
-      "desc": "VoxCPM2 — tokenizer-free multilingual text-to-speech სისტემა OpenBMB-ისგან (Tsinghua University-ის კვლევითი ჯგუფი). 30 ენაზე მუშაობს language tag-ის გარეშე, 3 წამიანი ნიმუშიდან ხმის კლონირება, 48kHz სტუდიური ხარისხი. 2 მილიარდი პარამეტრი, 8GB VRAM-ზე ეშვება, Apache 2.0 ლიცენზია. Minimax benchmark-ზე 85.4% ხმის მსგავსება. ElevenLabs-ის ღია ალტერნატივა — კომერციული სერვისის გარეშე სტუდიური ხარისხის TTS.",
-      "descEn": "VoxCPM2: Tokenizer-Free TTS for Multilingual Speech Generation, Creative Voice Design, and True-to-Life Cloning",
-      "stars": 40000
-    },
-    {
-      "id": "voicestudio",
-      "label": "VoiceStudio",
-      "category": "media",
-      "url": "https://github.com/debpalash/VoiceStudio",
-      "desc": "VoiceStudio ღია კოდის, სრულად ლოკალური ElevenLabs ალტერნატივაა: ხმის კლონირება, ხმის დიზაინი, ვიდეოს დუბლირება, დიქტოვკა, ტრანსკრიფცია და აუდიოწიგნების შექმნა 646 ენაზე — ყველაფერი შენს მანქანაზე, cloud-ის გარეშე. დესკტოპ პაკეტად ვრცელდება, პირველი გაშვება მართულ Python გარემოსა და ნაგულისხმევ მოდელს თვითონ ჩამოტვირთავს; Intel Mac-ს ლოკალური backend არ აქვს, remote backend სჭირდება. აქტიური beta-ა. Python, AGPL-3.0, 2026 წლის აპრილიდან — Coqui TTS-ისა და Kokoro-ს (ასევე ამ კოლექციაში) „მთელი სტუდიის\" ვერსია.",
-      "descEn": "VoiceStudio is the open-source, fully-local ElevenLabs alternative — voice cloning, voice design, video dubbing, dictation, transcription & audiobook creation in 646 languages.",
-      "stars": 77000
-    },
-    {
       "id": "brag",
       "label": "/brag",
       "category": "media",
@@ -3450,15 +3338,6 @@
       "desc": "Duix Avatar „ჭეშმარიტად ღია კოდის\" AI ავატარის (digital human) ხელსაწყოა offline ვიდეო გენერაციისა და ციფრული ადამიანის კლონირებისთვის: ერთი ვიდეოდან ავატარს ქმნი და მერე ნებისმიერ ტექსტსა თუ აუდიოს „ალაპარაკებ\", ლოკალურად, cloud API-ის გარეშე. C-ში დაწერილი ძირითადი ძრავა Windows-სა და Linux-ზე ეშვება. 2024 წლის დეკემბრიდან, 2,500+ fork; ლიცენზია საკუთარია (GitHub მას ავტომატურად ვერ ცნობს) — კომერციულ გამოყენებამდე შეამოწმე. HeyGen-ის ტიპის სერვისების self-hosted ალტერნატივა.",
       "descEn": "🚀 Truly open-source AI avatar(digital human) toolkit for offline video generation and digital human cloning.",
       "stars": 16000
-    },
-    {
-      "id": "omnivoice",
-      "label": "OmniVoice",
-      "category": "media",
-      "url": "https://github.com/k2-fsa/OmniVoice",
-      "desc": "OmniVoice მაღალი ხარისხის zero-shot ხმის კლონირებისა და text-to-speech მოდელია 646 ენისთვის — ქართულის ჩათვლით (ტრენინგში დაახლოებით 157 საათი ქართული მეტყველებაა). diffusion language model-ის სტილის არქიტექტურის წყალობით სწრაფია (real-time-ზე 40-ჯერ სწრაფად), ხმას რამდენიმე წამიანი ნიმუშიდან აკლონებს, voice design-ით კი სქესს, ასაკს, ტონის სიმაღლეს, დიალექტს ან აქცენტს და ჩურჩულსაც მართავ, არავერბალური ნიშნებითა (`[laughter]`) და გამოთქმის შესწორებით. k2-fsa-ს პროექტია; Python, Apache-2.0, ლოკალური ვებ-UI-ით, Hugging Face Space-ითა და Colab-ით. ქართულენოვანი გახმოვანების, აუდიოწიგნებისა და ხმოვანი ასისტენტებისთვის ერთ-ერთი საუკეთესო ღია ვარიანტია.",
-      "descEn": "High-Quality Voice Cloning TTS for 600+ Languages",
-      "stars": 15000
     },
     {
       "id": "hunyuanvideo",
@@ -3488,40 +3367,13 @@
       "stars": 13000
     },
     {
-      "id": "kokoro",
-      "label": "Kokoro",
-      "category": "media",
-      "url": "https://github.com/hexgrad/kokoro",
-      "desc": "Kokoro — მცირე, მაგრამ ხარისხიანი ღია TTS მოდელი (82M პარამეტრი), Apache 2.0. ლოკალურად სწრაფი მეტყველების სინთეზი მინიმალური რესურსით — ერთ-ერთი ყველაზე პოპულარული მსუბუქი TTS 2026-ში.",
-      "descEn": "A small, high-quality open TTS model (82M params, Apache 2.0) — fast local speech synthesis with minimal resources.",
-      "stars": 9500
-    },
-    {
       "id": "minimax-h3",
       "label": "MiniMax-H3",
       "category": "media",
       "url": "https://github.com/MiniMax-AI/MiniMax-H3",
-      "desc": "MiniMax-H3 MiniMax-ის ვიდეო-აუდიო გენერაციის მოდელია, რომლის ოფიციალურ რეპოშიც ცხრა agent skill-ია. მათგან `h3-prompt-writing` სუფთა Markdown skill-ია გარე API-ს გარეშე — Claude Code-ში, Claude Agent SDK-ში, Cursor-ში, Codex-სა და LangChain-ში მუშაობს და ორი prompt გზამკვლევით მოდის (ტექსტი/საკვანძო კადრი და სრული reference რეჟიმი, Ref2VA). დანარჩენი რვა სტილ-სპეციფიკური ვიდეო skill-ია MiniMax Hub-ის canvas workflow-სთვის. `npx skills add https://github.com/MiniMax-AI/MiniMax-H3 --skill h3-prompt-writing` აყენებს. ონლაინ API platform.minimax.io-ზეა; ლოკალური ინფერენსისთვის antirez/h3.c (ასევე ამ კოლექციაში). 2026 წლის ივლისიდან.",
+      "desc": "MiniMax-H3 MiniMax-ის ვიდეო-აუდიო გენერაციის მოდელია, რომლის ოფიციალურ რეპოშიც ცხრა agent skill-ია. მათგან `h3-prompt-writing` სუფთა Markdown skill-ია გარე API-ს გარეშე — Claude Code-ში, Claude Agent SDK-ში, Cursor-ში, Codex-სა და LangChain-ში მუშაობს და ორი prompt გზამკვლევით მოდის (ტექსტი/საკვანძო კადრი და სრული reference რეჟიმი, Ref2VA). დანარჩენი რვა სტილ-სპეციფიკური ვიდეო skill-ია MiniMax Hub-ის canvas workflow-სთვის. `npx skills add https://github.com/MiniMax-AI/MiniMax-H3 --skill h3-prompt-writing` აყენებს. ონლაინ API platform.minimax.io-ზეა; ლოკალური ინფერენსისთვის Mac-ზე — antirez-ის (Redis-ის შემქმნელის) h3.c. 2026 წლის ივლისიდან.",
       "descEn": "MiniMax-H3 video-and-audio generation model. The repo bundles nine agent skills, including a portable h3-prompt-writing skill (plain Markdown, no API calls) that works in Claude Code, Codex, Cursor and LangChain, plus API docs for platform.minimax.io.",
       "stars": 10000
-    },
-    {
-      "id": "skills-6",
-      "label": "Remotion Skills",
-      "category": "media",
-      "url": "https://github.com/remotion-dev/skills",
-      "desc": "Remotion Skills Remotion-ის (React-ში ვიდეოების პროგრამული შექმნის ფრეიმვორკი) ოფიციალური agent skills-ია. AI coding agent-ებს Remotion-ის ექსპერტიზას სძენს — კომპოზიცია, რენდერინგი, ტაიმინგი, animation. TypeScript-ში. თუ data visualizations-ს, reels-ს ან ანიმაციებს React კომპონენტებიდან ქმნი, ეს skill-ი AI-ს ყველა ნიუანსს ასწავლის — Remotion-ის ოფიციალური გუნდის მიერ.",
-      "descEn": "Agent Skills",
-      "stars": 5400
-    },
-    {
-      "id": "realtimetts",
-      "label": "RealtimeTTS",
-      "category": "media",
-      "url": "https://github.com/KoljaB/RealtimeTTS",
-      "desc": "RealtimeTTS — Python ბიბლიოთეკა, რომელიც ტექსტს ხმად real-time-ში გარდაქმნის, streaming input-ისთვის ოპტიმიზებული. LLM-ის output-ს stream-ად ღებულობს და პირველ სიტყვებს 2 წამში წარმოაჩენს — სრული response-ის დასრულების გარეშე. Coqui, ElevenLabs, Azure, Piper, Kokoro — მრავალი TTS backend მხარდაჭერილია ერთი API-ით. ხმის კლონირება Coqui backend-ით. Kolja Beigel-ის (KoljaB) independent project, MIT ლიცენზია. სრული voice AI pipeline-ების ასაწყობად.",
-      "descEn": "Converts text to speech in realtime",
-      "stars": 4000
     },
     {
       "id": "video-use",
@@ -3533,6 +3385,15 @@
       "stars": 29000
     },
     {
+      "id": "skills-6",
+      "label": "Remotion Skills",
+      "category": "media",
+      "url": "https://github.com/remotion-dev/skills",
+      "desc": "Remotion Skills Remotion-ის (React-ში ვიდეოების პროგრამული შექმნის ფრეიმვორკი) ოფიციალური agent skills-ია. AI coding agent-ებს Remotion-ის ექსპერტიზას სძენს — კომპოზიცია, რენდერინგი, ტაიმინგი, animation. TypeScript-ში. თუ data visualizations-ს, reels-ს ან ანიმაციებს React კომპონენტებიდან ქმნი, ეს skill-ი AI-ს ყველა ნიუანსს ასწავლის — Remotion-ის ოფიციალური გუნდის მიერ.",
+      "descEn": "Agent Skills",
+      "stars": 5400
+    },
+    {
       "id": "editor",
       "label": "Diffusion Studio Editor",
       "category": "media",
@@ -3540,6 +3401,105 @@
       "desc": "Diffusion Studio Editor ღია კოდის ვიდეო რედაქტორია, აგენტებისთვის აშენებული: ვიდეოს Codex-ით, Claude Code-ით, OpenCode-ით ან Pi-ით ამონტაჟებ და შედეგს სრულფასოვან სარედაქციო გარემოში ხვეწ. ყოველი რედაქტირება ნამდვილ კოდად იწერება, ასე რომ აგენტი ყოველთვის ბოლო ვერსიას ხედავს — „edits become code, code becomes video\". ნედლ მასალას საქაღალდეში ყრი, სასურველ ვიდეოს ითხოვ და აგენტი კლიპებს ჭრის, filler სიტყვებს შლის, დანარჩენს აწყობს; headless რეჟიმიც აქვს. TypeScript, MPL-2.0, 2026 წლის ივლისიდან. HyperFrames-ისა და OpenCut-ის (ასევე ამ კოლექციაში) „აგენტი-რედაქტორი\" კონკურენტი.",
       "descEn": "An open-source video editor built for agents. Edits become code, code becomes video.",
       "stars": 3300
+    },
+    {
+      "id": "voicestudio",
+      "label": "VoiceStudio",
+      "category": "voice",
+      "url": "https://github.com/debpalash/VoiceStudio",
+      "desc": "VoiceStudio ღია კოდის, სრულად ლოკალური ElevenLabs ალტერნატივაა: ხმის კლონირება, ხმის დიზაინი, ვიდეოს დუბლირება, დიქტოვკა, ტრანსკრიფცია და აუდიოწიგნების შექმნა 646 ენაზე — ყველაფერი შენს მანქანაზე, cloud-ის გარეშე. დესკტოპ პაკეტად ვრცელდება, პირველი გაშვება მართულ Python გარემოსა და ნაგულისხმევ მოდელს თვითონ ჩამოტვირთავს; Intel Mac-ს ლოკალური backend არ აქვს, remote backend სჭირდება. აქტიური beta-ა. Python, AGPL-3.0, 2026 წლის აპრილიდან — Coqui TTS-ისა და Kokoro-ს (ასევე ამ კოლექციაში) „მთელი სტუდიის\" ვერსია.",
+      "descEn": "VoiceStudio is the open-source, fully-local ElevenLabs alternative — voice cloning, voice design, video dubbing, dictation, transcription & audiobook creation in 646 languages.",
+      "stars": 77000
+    },
+    {
+      "id": "voicebox",
+      "label": "Voicebox",
+      "category": "voice",
+      "url": "https://github.com/jamiepine/voicebox",
+      "desc": "Voicebox ღია, ლოკალური AI ხმის სტუდიაა — ElevenLabs-ისა და WisprFlow-ის უფასო ალტერნატივა ერთ აპში: რამდენიმე წამიანი ჩანაწერიდან ხმას აკლონებს, 8 TTS ძრავით (Qwen3-TTS, Chatterbox, Kokoro და სხვ.) 23 ენაზე მეტყველებას აგენერირებს, გლობალური hotkey-ით ნებისმიერ ტექსტურ ველში კარნახს იღებს (Whisper) და MCP-ით ნებისმიერ აგენტს — Claude Code-ს, Cursor-ს, Cline-ს — შენ მიერ არჩეული ხმით „ალაპარაკებს“. ეფექტები, ემოციური ტეგები (`[laugh]`, `[sigh]`), შეუზღუდავი სიგრძე და მრავალტრეკიანი რედაქტორი პოდკასტებისა და ნარატივისთვის; მოდელები და ხმის მონაცემები კომპიუტერს არ ტოვებს. Python, MIT, voicebox.sh. კონტენტის შემქმნელებისთვის, ვისაც ხმასთან მუშაობა ღრუბლის გარეშე სურს.",
+      "descEn": "The open-source AI voice studio. Clone, dictate, create.",
+      "stars": 58000
+    },
+    {
+      "id": "vibevoice",
+      "label": "VibeVoice",
+      "category": "voice",
+      "url": "https://github.com/microsoft/VibeVoice",
+      "desc": "VibeVoice — **Microsoft-ის** frontier ღია ხმის მოდელების ოჯახი: real-time TTS (streaming, long-form) და unified ASR, რომელიც 60-წუთიან აუდიოს ერთ გავლაში ამუშავებს speaker/timestamp/content სტრუქტურით. ღია წონებით.",
+      "descEn": "Microsoft's open frontier voice AI models — real-time streaming TTS and unified long-form ASR (who/when/what).",
+      "stars": 55000
+    },
+    {
+      "id": "whisper-cpp",
+      "label": "whisper.cpp",
+      "category": "voice",
+      "url": "https://github.com/ggml-org/whisper.cpp",
+      "desc": "whisper.cpp — OpenAI-ის Whisper speech-to-text მოდელის C/C++ port, Georgi Gerganov-ის მიერ (llama.cpp-ის შემქმნელი). GPU-ს გარეშეც მუშაობს — CPU-ზე, ARM-ზე, ტელეფონებზეც. 100-ზე მეტ ენაზე transcription-ს ასრულებს, ქართულის ჩათვლით. real-time streaming, speaker diarization, word-level timestamps მხარდაჭერილია. C++ ბიბლიოთეკა Python, Node.js, Go binding-ებითაც ხელმისაწვდომია. podcast-ების, ინტერვიუების, meeting-ების ავტომატური transcription-ისთვის ინდუსტრიული ინსტრუმენტია.",
+      "descEn": "Port of OpenAI's Whisper model in C/C++",
+      "stars": 54000
+    },
+    {
+      "id": "tts",
+      "label": "Coqui TTS",
+      "category": "voice",
+      "url": "https://github.com/coqui-ai/TTS",
+      "desc": "Coqui TTS — ღია კოდის deep learning toolkit text-to-speech-ისთვის, Python-ში, კვლევასა და production-ში გამოცდილი. ხმის კლონირება 3-10 წამიანი ნიმუშიდანაა შესაძლებელი. 17-ზე მეტ ენაზე მუშაობს, მრავალი სხვადასხვა TTS არქიტექტურა ჩაშენებულია (VITS, YourTTS, Bark). შენიშვნა: Coqui AI კომპანია 2024 წელს დაიხურა და ეს repo 2024 წლის აგვისტოს შემდეგ აღარ განახლებულა — აქტიური ალტერნატივებია RealtimeTTS და OmniVoice (ასევე ამ კატეგორიაში).",
+      "descEn": "🐸💬 - a deep learning toolkit for Text-to-Speech, battle-tested in research and production",
+      "stars": 46000
+    },
+    {
+      "id": "voxcpm",
+      "label": "VoxCPM",
+      "category": "voice",
+      "url": "https://github.com/OpenBMB/VoxCPM",
+      "desc": "VoxCPM2 — tokenizer-free multilingual text-to-speech სისტემა OpenBMB-ისგან (Tsinghua University-ის კვლევითი ჯგუფი). 30 ენაზე მუშაობს language tag-ის გარეშე, 3 წამიანი ნიმუშიდან ხმის კლონირება, 48kHz სტუდიური ხარისხი. 2 მილიარდი პარამეტრი, 8GB VRAM-ზე ეშვება, Apache 2.0 ლიცენზია. Minimax benchmark-ზე 85.4% ხმის მსგავსება. ElevenLabs-ის ღია ალტერნატივა — კომერციული სერვისის გარეშე სტუდიური ხარისხის TTS.",
+      "descEn": "VoxCPM2: Tokenizer-Free TTS for Multilingual Speech Generation, Creative Voice Design, and True-to-Life Cloning",
+      "stars": 40000
+    },
+    {
+      "id": "bark",
+      "label": "Bark",
+      "category": "voice",
+      "url": "https://github.com/suno-ai/bark",
+      "desc": "Bark — Suno AI-ის text-prompted generative audio model. ჩვეულებრივი TTS-ისგან განსხვავებით, Bark ქმნის არა მხოლოდ speech-ს, არამედ სიმღერებს, ხმოვან ეფექტებს, სიცილს, ტირილს, ოხვრასა და სხვა non-verbal ხმებს. 100-ზე მეტ ენაზე მუშაობს. Python/Jupyter-ში, Hugging Face-ზე ხელმისაწვდომი. შენიშვნა: Bark-ის განახლებები 2024 წლის აგვისტოში შეჩერდა, Suno AI ახლა მუსიკის გენერაციის კომერციულ პლატფორმაზეა ფოკუსირებული — repo community mode-შია. Coqui TTS-ის ალტერნატივა, რომელსაც მეტი expressive range აქვს.",
+      "descEn": "🔊 Text-Prompted Generative Audio Model",
+      "stars": 39000
+    },
+    {
+      "id": "pipecat",
+      "label": "Pipecat",
+      "category": "voice",
+      "url": "https://github.com/pipecat-ai/pipecat",
+      "desc": "Pipecat — production-დონის ხმის (voice) AI ფრეიმვორკი: sub-250ms latency, WebRTC, multimodal (ხმა+ხედვა+ტექსტი), real-time streaming და 70+ ენა. ხმის აგენტების (სატელეფონო, ასისტენტები) ასაშენებლად — Vapi/Retell-ის ღია ალტერნატივა.",
+      "descEn": "Production-grade voice AI agent framework — sub-250ms latency, WebRTC, multimodal, real-time streaming, 70+ languages.",
+      "stars": 17000
+    },
+    {
+      "id": "omnivoice",
+      "label": "OmniVoice",
+      "category": "voice",
+      "url": "https://github.com/k2-fsa/OmniVoice",
+      "desc": "OmniVoice მაღალი ხარისხის zero-shot ხმის კლონირებისა და text-to-speech მოდელია 646 ენისთვის — ქართულის ჩათვლით (ტრენინგში დაახლოებით 157 საათი ქართული მეტყველებაა). diffusion language model-ის სტილის არქიტექტურის წყალობით სწრაფია (real-time-ზე 40-ჯერ სწრაფად), ხმას რამდენიმე წამიანი ნიმუშიდან აკლონებს, voice design-ით კი სქესს, ასაკს, ტონის სიმაღლეს, დიალექტს ან აქცენტს და ჩურჩულსაც მართავ, არავერბალური ნიშნებითა (`[laughter]`) და გამოთქმის შესწორებით. k2-fsa-ს პროექტია; Python, Apache-2.0, ლოკალური ვებ-UI-ით, Hugging Face Space-ითა და Colab-ით. ქართულენოვანი გახმოვანების, აუდიოწიგნებისა და ხმოვანი ასისტენტებისთვის ერთ-ერთი საუკეთესო ღია ვარიანტია.",
+      "descEn": "High-Quality Voice Cloning TTS for 600+ Languages",
+      "stars": 15000
+    },
+    {
+      "id": "kokoro",
+      "label": "Kokoro",
+      "category": "voice",
+      "url": "https://github.com/hexgrad/kokoro",
+      "desc": "Kokoro — მცირე, მაგრამ ხარისხიანი ღია TTS მოდელი (82M პარამეტრი), Apache 2.0. ლოკალურად სწრაფი მეტყველების სინთეზი მინიმალური რესურსით — ერთ-ერთი ყველაზე პოპულარული მსუბუქი TTS 2026-ში.",
+      "descEn": "A small, high-quality open TTS model (82M params, Apache 2.0) — fast local speech synthesis with minimal resources.",
+      "stars": 9500
+    },
+    {
+      "id": "realtimetts",
+      "label": "RealtimeTTS",
+      "category": "voice",
+      "url": "https://github.com/KoljaB/RealtimeTTS",
+      "desc": "RealtimeTTS — Python ბიბლიოთეკა, რომელიც ტექსტს ხმად real-time-ში გარდაქმნის, streaming input-ისთვის ოპტიმიზებული. LLM-ის output-ს stream-ად ღებულობს და პირველ სიტყვებს 2 წამში წარმოაჩენს — სრული response-ის დასრულების გარეშე. Coqui, ElevenLabs, Azure, Piper, Kokoro — მრავალი TTS backend მხარდაჭერილია ერთი API-ით. ხმის კლონირება Coqui backend-ით. Kolja Beigel-ის (KoljaB) independent project, MIT ლიცენზია. სრული voice AI pipeline-ების ასაწყობად.",
+      "descEn": "Converts text to speech in realtime",
+      "stars": 4000
     },
     {
       "id": "build-your-own-x",
@@ -3704,15 +3664,6 @@
       "stars": 56000
     },
     {
-      "id": "awesome-cursorrules",
-      "label": "awesome-cursorrules",
-      "category": "resources",
-      "url": "https://github.com/PatrickJS/awesome-cursorrules",
-      "desc": "awesome-cursorrules — Cursor-ის `.cursorrules` ფაილების კანონიკური კრებული სხვადასხვა ენისა და framework-ისთვის. AI coding agent-ის ქცევის კონფიგურაცია მზა შაბლონებით.",
-      "descEn": "📄  Configuration files that enhance Cursor AI editor experience with custom rules and behaviors",
-      "stars": 41000
-    },
-    {
       "id": "ai-engineering-from-scratch",
       "label": "AI Engineering from Scratch",
       "category": "resources",
@@ -3758,15 +3709,6 @@
       "stars": 27000
     },
     {
-      "id": "agentskills",
-      "label": "Agent Skills Spec",
-      "category": "resources",
-      "url": "https://github.com/agentskills/agentskills",
-      "desc": "Agent Skills Spec AI agent-ებისთვის skills-ის მიცემის ღია სტანდარტისა და სპეციფიკაციის კოლექციაა — write-once, use-everywhere პრინციპით. სრული სპეციფიკაციის დოკუმენტი, reference SDK და მაგალითი skill-ები. Python-ში, agentskills.io — დამოუკიდებელი, community-driven პროექტი. Claude Code, Codex და სხვა platform-ები ამ სტანდარტს მიჰყვებიან, თუმცა ეს Anthropic-ის ოფიციალური სტანდარტი არ არის.",
-      "descEn": "Specification and documentation for Agent Skills",
-      "stars": 26000
-    },
-    {
       "id": "cookbook",
       "label": "Gemini API Cookbook",
       "category": "resources",
@@ -3776,15 +3718,6 @@
       "stars": 18000
     },
     {
-      "id": "loop-engineering",
-      "label": "Loop Engineering",
-      "category": "resources",
-      "url": "https://github.com/cobusgreyling/loop-engineering",
-      "desc": "Loop Engineering Cobus Greyling-ის პრაქტიკული პატერნების, სტარტერებისა და CLI ხელსაწყოების კრებულია AI coding agent-ებთან „ციკლების ინჟინერიისთვის\" — დევიზით „Stop prompting. Design the loop. Get a score.\" `npx @cobusgreyling/loop init . --pattern daily-triage --tool claude` მზა ციკლის შაბლონს აყენებს (მაგალითად ყოველდღიური triage Claude-ისთვის), `loop doctor` კი არსებულ setup-ს აფასებს და ქულას აძლევს. იდეა: ერთჯერადი prompt-ის ნაცვლად განმეორებადი, გაზომვადი აგენტური ციკლი. MIT, 2026 წლის ივნისიდან; 12-Factor Agents-ის (ასევე ამ კოლექციაში) სულისკვეთებით.",
-      "descEn": "Practical patterns, starters & CLI tools for loop engineering with AI coding agents. Design systems that prompt and orchestrate agents (inspired by Addy Osmani and Boris Cherny). Includes loop-audit, loop-init, loop-cost.",
-      "stars": 12000
-    },
-    {
       "id": "awesome-free-llm-apis",
       "label": "Awesome Free LLM APIs",
       "category": "resources",
@@ -3792,42 +3725,6 @@
       "desc": "Awesome Free LLM APIs იმ ტექსტური LLM API-ების სიაა, რომლებსაც მუდმივი უფასო tier აქვთ: თითოეულ provider-ზე — მოდელები, კონტექსტის ზომა, rate limit-ები, base URL და პირდაპირი ბმული API key-ის გვერდზე (Google Gemini, Cohere, Aion Labs და ბევრი სხვა; ცალკეა მოდელების შემქმნელები და inference provider-ები). თითქმის ყველა endpoint OpenAI SDK-თავსებადია, ამიტომ კოდში ერთი base URL-ის შეცვლა კმარა. CC0, Manifest-ის გუნდისგან. სტუდენტებისა და ექსპერიმენტატორებისთვის — ოღონდ provider-ის პირობები ყოველთვის გადაამოწმე (ზოგი უფასო tier-ის მონაცემებს მოდელის გასაუმჯობესებლად იყენებს).",
       "descEn": "List of Permanent Free LLM API  (API Keys)",
       "stars": 11000
-    },
-    {
-      "id": "harness-engineering",
-      "label": "Harness Engineering",
-      "category": "resources",
-      "url": "https://github.com/lopopolo/harness-engineering",
-      "desc": "Harness Engineering Ryan Lopopolo-ს ანთოლოგია, საველე გზამკვლევი და აგენტის კონტექსტის პაკეტია harness engineering-ზე — პრაქტიკაზე, რომელიც აგენტის გამოსავალს მოდელის ნაცვლად მისი გარემოს (ხელსაწყოების, prompt-ების, ციკლების, კარიბჭეების) ფორმირებით აუმჯობესებს. „ხალხმა არ იცის, რომ აგენტი უბრალოდ ჩემს ნაწერებზე, ტვიტებზე, პოდკასტებსა და მოხსენებებზე შეიძლება მიუშვან და გამოსავალი 100-ჯერ გაუმჯობესდეს\" — ავტორის ტვიტიდან. OpenAI-ის harness engineering-ის სტატიას ეხმიანება. CC-BY-4.0, 2026 წლის ივლისიდან.",
-      "descEn": "🐎 Ryan Lopopolo’s anthology, field guide, and agent context bundle for harness engineering",
-      "stars": 2700
-    },
-    {
-      "id": "awesome-ai-agent-papers",
-      "label": "Awesome AI Agent Papers",
-      "category": "resources",
-      "url": "https://github.com/VoltAgent/awesome-ai-agent-papers",
-      "desc": "Awesome AI Agent Papers — 2026-ში გამოქვეყნებული აგენტური AI კვლევითი ნაშრომების კურირებული კოლექცია: agent engineering, memory, evaluation, workflows და ავტონომიური სისტემები. VoltAgent-ის მიერ.",
-      "descEn": "A curated collection of 2026 AI agent research papers — agent engineering, memory, evaluation, workflows and autonomous systems.",
-      "stars": 1900
-    },
-    {
-      "id": "awesome-ai-agents-2026",
-      "label": "Awesome AI Agents 2026",
-      "category": "resources",
-      "url": "https://github.com/caramaschiHG/awesome-ai-agents-2026",
-      "desc": "Awesome AI Agents 2026 — 300+ AI აგენტის, ფრეიმვორკისა და ხელსაწყოს ყოვლისმომცველი სია 20+ კატეგორიად, ყოველთვიური განახლებით. agentic ეკოსისტემის სანავიგაციო რუკა.",
-      "descEn": "A comprehensive, monthly-updated list of 300+ AI agents, frameworks and tools across 20+ categories.",
-      "stars": 2000
-    },
-    {
-      "id": "awesome-cli-coding-agents",
-      "label": "Awesome CLI Coding Agents",
-      "category": "resources",
-      "url": "https://github.com/bradAGI/awesome-cli-coding-agents",
-      "desc": "Awesome CLI Coding Agents — ტერმინალში მომუშავე AI coding-აგენტებისა და მათი ორკესტრატორების კურირებული კატალოგი: Pi, OpenCode, Aider, Goose, Claude Code, Codex, Gemini CLI, parallel runners და agent ინფრასტრუქტურა.",
-      "descEn": "Curated directory of terminal-native AI coding agents and the harnesses that orchestrate them.",
-      "stars": 1400
     },
     {
       "id": "hyperframes-2",
@@ -4069,11 +3966,6 @@
       "type": "cluster"
     },
     {
-      "source": "claude-peers-mcp",
-      "target": "paperclip",
-      "type": "cluster"
-    },
-    {
       "source": "ecc",
       "target": "superpowers",
       "type": "cluster"
@@ -4139,6 +4031,11 @@
       "type": "cluster"
     },
     {
+      "source": "awesome-cursorrules",
+      "target": "superpowers",
+      "type": "cluster"
+    },
+    {
       "source": "awesome-copilot",
       "target": "superpowers",
       "type": "cluster"
@@ -4160,6 +4057,11 @@
     },
     {
       "source": "i-have-adhd",
+      "target": "superpowers",
+      "type": "cluster"
+    },
+    {
+      "source": "agent-skills-2",
       "target": "superpowers",
       "type": "cluster"
     },
@@ -4199,6 +4101,16 @@
       "type": "cluster"
     },
     {
+      "source": "agentskills",
+      "target": "superpowers",
+      "type": "cluster"
+    },
+    {
+      "source": "skillopt",
+      "target": "superpowers",
+      "type": "cluster"
+    },
+    {
       "source": "stop-slop",
       "target": "superpowers",
       "type": "cluster"
@@ -4210,6 +4122,11 @@
     },
     {
       "source": "plugins",
+      "target": "superpowers",
+      "type": "cluster"
+    },
+    {
+      "source": "loop-engineering",
       "target": "superpowers",
       "type": "cluster"
     },
@@ -4230,11 +4147,6 @@
     },
     {
       "source": "qwen-mm-plugins",
-      "target": "superpowers",
-      "type": "cluster"
-    },
-    {
-      "source": "claudish-to-english",
       "target": "superpowers",
       "type": "cluster"
     },
@@ -4489,16 +4401,6 @@
       "type": "cluster"
     },
     {
-      "source": "skillopt",
-      "target": "autogpt",
-      "type": "cluster"
-    },
-    {
-      "source": "pipecat",
-      "target": "autogpt",
-      "type": "cluster"
-    },
-    {
       "source": "agent-framework",
       "target": "autogpt",
       "type": "cluster"
@@ -4739,11 +4641,6 @@
       "type": "cluster"
     },
     {
-      "source": "rdrr",
-      "target": "firecrawl",
-      "type": "cluster"
-    },
-    {
       "source": "claude-mem",
       "target": "markitdown",
       "type": "cluster"
@@ -4855,21 +4752,6 @@
     },
     {
       "source": "semantica",
-      "target": "markitdown",
-      "type": "cluster"
-    },
-    {
-      "source": "markdownify-mcp",
-      "target": "markitdown",
-      "type": "cluster"
-    },
-    {
-      "source": "mcp-crawl4ai-rag",
-      "target": "markitdown",
-      "type": "cluster"
-    },
-    {
-      "source": "prism-coder",
       "target": "markitdown",
       "type": "cluster"
     },
@@ -5060,11 +4942,6 @@
     },
     {
       "source": "lms",
-      "target": "ollama",
-      "type": "cluster"
-    },
-    {
-      "source": "h3-c",
       "target": "ollama",
       "type": "cluster"
     },
@@ -5429,17 +5306,12 @@
       "type": "cluster"
     },
     {
-      "source": "ai-website-cloner-template",
-      "target": "ui-ux-pro-max-skill",
-      "type": "cluster"
-    },
-    {
-      "source": "agent-skills-2",
-      "target": "ui-ux-pro-max-skill",
-      "type": "cluster"
-    },
-    {
       "source": "impeccable",
+      "target": "ui-ux-pro-max-skill",
+      "type": "cluster"
+    },
+    {
+      "source": "ai-website-cloner-template",
       "target": "ui-ux-pro-max-skill",
       "type": "cluster"
     },
@@ -5529,11 +5401,6 @@
       "type": "cluster"
     },
     {
-      "source": "designer-skills",
-      "target": "ui-ux-pro-max-skill",
-      "type": "cluster"
-    },
-    {
       "source": "comfyui",
       "target": "stable-diffusion-webui",
       "type": "cluster"
@@ -5559,31 +5426,6 @@
       "type": "cluster"
     },
     {
-      "source": "voicebox",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "vibevoice",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "whisper-cpp",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "tts",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "bark",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
       "source": "diffusers",
       "target": "stable-diffusion-webui",
       "type": "cluster"
@@ -5604,27 +5446,12 @@
       "type": "cluster"
     },
     {
-      "source": "voxcpm",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "voicestudio",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
       "source": "brag",
       "target": "stable-diffusion-webui",
       "type": "cluster"
     },
     {
       "source": "duix-avatar",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "omnivoice",
       "target": "stable-diffusion-webui",
       "type": "cluster"
     },
@@ -5644,22 +5471,7 @@
       "type": "cluster"
     },
     {
-      "source": "kokoro",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
       "source": "minimax-h3",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "skills-6",
-      "target": "stable-diffusion-webui",
-      "type": "cluster"
-    },
-    {
-      "source": "realtimetts",
       "target": "stable-diffusion-webui",
       "type": "cluster"
     },
@@ -5669,8 +5481,63 @@
       "type": "cluster"
     },
     {
+      "source": "skills-6",
+      "target": "stable-diffusion-webui",
+      "type": "cluster"
+    },
+    {
       "source": "editor",
       "target": "stable-diffusion-webui",
+      "type": "cluster"
+    },
+    {
+      "source": "voicebox",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "vibevoice",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "whisper-cpp",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "tts",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "voxcpm",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "bark",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "pipecat",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "omnivoice",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "kokoro",
+      "target": "voicestudio",
+      "type": "cluster"
+    },
+    {
+      "source": "realtimetts",
+      "target": "voicestudio",
       "type": "cluster"
     },
     {
@@ -5759,11 +5626,6 @@
       "type": "cluster"
     },
     {
-      "source": "awesome-cursorrules",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
       "source": "ai-engineering-from-scratch",
       "target": "build-your-own-x",
       "type": "cluster"
@@ -5789,42 +5651,12 @@
       "type": "cluster"
     },
     {
-      "source": "agentskills",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
       "source": "cookbook",
       "target": "build-your-own-x",
       "type": "cluster"
     },
     {
-      "source": "loop-engineering",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
       "source": "awesome-free-llm-apis",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
-      "source": "harness-engineering",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
-      "source": "awesome-ai-agent-papers",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
-      "source": "awesome-ai-agents-2026",
-      "target": "build-your-own-x",
-      "type": "cluster"
-    },
-    {
-      "source": "awesome-cli-coding-agents",
       "target": "build-your-own-x",
       "type": "cluster"
     },
@@ -5930,11 +5762,6 @@
     },
     {
       "source": "claude-code",
-      "target": "claude-peers-mcp",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
       "target": "superpowers",
       "type": "hub"
     },
@@ -6005,6 +5832,11 @@
     },
     {
       "source": "claude-code",
+      "target": "awesome-cursorrules",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
       "target": "awesome-copilot",
       "type": "hub"
     },
@@ -6026,6 +5858,11 @@
     {
       "source": "claude-code",
       "target": "i-have-adhd",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
+      "target": "agent-skills-2",
       "type": "hub"
     },
     {
@@ -6065,6 +5902,16 @@
     },
     {
       "source": "claude-code",
+      "target": "agentskills",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
+      "target": "skillopt",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
       "target": "stop-slop",
       "type": "hub"
     },
@@ -6076,6 +5923,11 @@
     {
       "source": "claude-code",
       "target": "plugins",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
+      "target": "loop-engineering",
       "type": "hub"
     },
     {
@@ -6096,11 +5948,6 @@
     {
       "source": "claude-code",
       "target": "qwen-mm-plugins",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
-      "target": "claudish-to-english",
       "type": "hub"
     },
     {
@@ -6285,11 +6132,6 @@
     },
     {
       "source": "claude-code",
-      "target": "prism-coder",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
       "target": "ifixai",
       "type": "hub"
     },
@@ -6405,12 +6247,12 @@
     },
     {
       "source": "claude-code",
-      "target": "ai-website-cloner-template",
+      "target": "impeccable",
       "type": "hub"
     },
     {
       "source": "claude-code",
-      "target": "impeccable",
+      "target": "ai-website-cloner-template",
       "type": "hub"
     },
     {
@@ -6450,17 +6292,7 @@
     },
     {
       "source": "claude-code",
-      "target": "designer-skills",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
       "target": "remotion",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
-      "target": "voicebox",
       "type": "hub"
     },
     {
@@ -6486,6 +6318,11 @@
     {
       "source": "claude-code",
       "target": "editor",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
+      "target": "voicebox",
       "type": "hub"
     },
     {
@@ -6516,16 +6353,6 @@
     {
       "source": "claude-code",
       "target": "12-factor-agents",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
-      "target": "agentskills",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
-      "target": "awesome-cli-coding-agents",
       "type": "hub"
     },
     {
@@ -6595,6 +6422,11 @@
     },
     {
       "source": "claude-code",
+      "target": "voicestudio",
+      "type": "hub"
+    },
+    {
+      "source": "claude-code",
       "target": "build-your-own-x",
       "type": "hub"
     },
@@ -6606,11 +6438,6 @@
     {
       "source": "deepseek-harness",
       "target": "defending-code-reference-harness",
-      "type": "cross"
-    },
-    {
-      "source": "deepseek-harness",
-      "target": "harness-engineering",
       "type": "cross"
     },
     {
@@ -6654,6 +6481,16 @@
       "type": "cross"
     },
     {
+      "source": "loop-engineering",
+      "target": "ai-engineering-from-scratch",
+      "type": "cross"
+    },
+    {
+      "source": "loop-engineering",
+      "target": "ai-engineering-hub",
+      "type": "cross"
+    },
+    {
       "source": "understand-anything",
       "target": "cli-anything",
       "type": "cross"
@@ -6694,11 +6531,6 @@
       "type": "cross"
     },
     {
-      "source": "code-graph-rag",
-      "target": "mcp-crawl4ai-rag",
-      "type": "cross"
-    },
-    {
       "source": "free-claude-code",
       "target": "awesome-free-llm-apis",
       "type": "cross"
@@ -6736,11 +6568,6 @@
     {
       "source": "browser-use",
       "target": "video-use",
-      "type": "cross"
-    },
-    {
-      "source": "crawl4ai",
-      "target": "mcp-crawl4ai-rag",
       "type": "cross"
     },
     {
@@ -6826,21 +6653,6 @@
     {
       "source": "openai-cookbook",
       "target": "cookbook",
-      "type": "cross"
-    },
-    {
-      "source": "ai-engineering-from-scratch",
-      "target": "ai-engineering-hub",
-      "type": "cross"
-    },
-    {
-      "source": "ai-engineering-from-scratch",
-      "target": "loop-engineering",
-      "type": "cross"
-    },
-    {
-      "source": "ai-engineering-from-scratch",
-      "target": "harness-engineering",
       "type": "cross"
     },
     {
