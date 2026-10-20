@@ -118,32 +118,43 @@
   <!-- Bottom stats -->
   <g font-family="'Segoe UI', Arial, sans-serif" font-size="13">
     <!-- Repos -->
-    <text x="80" y="296" text-anchor="middle">
+    <text x="70" y="296" text-anchor="middle">
       <tspan fill="#00D0FF" font-weight="700" font-size="20">404</tspan>
       <tspan dx="6" fill="#B3B3B3">რეპო</tspan>
     </text>
     <!-- Categories -->
-    <text x="220" y="296" text-anchor="middle">
+    <text x="195" y="296" text-anchor="middle">
       <tspan fill="#A949DA" font-weight="700" font-size="20">21</tspan>
       <tspan dx="6" fill="#B3B3B3">კატეგორია</tspan>
     </text>
-    <!-- Tags -->
-    <g transform="translate(380, 283)">
+    <!-- Tags: topics, then the agents the collection serves -->
+    <g transform="translate(275, 283)">
       <rect x="0" y="0" width="80" height="24" rx="12" fill="rgba(0,208,255,0.15)" stroke="#00D0FF" stroke-width="0.5"/>
       <text x="40" y="16" text-anchor="middle" fill="#00D0FF" font-size="11" font-weight="600">AI Agents</text>
     </g>
-    <g transform="translate(470, 283)">
+    <g transform="translate(363, 283)">
       <rect x="0" y="0" width="55" height="24" rx="12" fill="rgba(169,73,218,0.15)" stroke="#A949DA" stroke-width="0.5"/>
       <text x="27.5" y="16" text-anchor="middle" fill="#A949DA" font-size="11" font-weight="600">MCP</text>
     </g>
-    <g transform="translate(535, 283)">
+    <g transform="translate(426, 283)">
       <rect x="0" y="0" width="100" height="24" rx="12" fill="rgba(0,208,255,0.15)" stroke="#00D0FF" stroke-width="0.5"/>
       <text x="50" y="16" text-anchor="middle" fill="#00D0FF" font-size="11" font-weight="600">Claude Code</text>
     </g>
-    <!-- Brand -->
-    <text x="780" y="296" text-anchor="middle" fill="#B3B3B3" font-size="12">
-      <tspan fill="#00D0FF">&#9733;</tspan>
-      <tspan dx="4" fill="#FAFAFA" font-weight="600">aipulsegeorgia.ge</tspan>
-    </text>
+    <g transform="translate(534, 283)">
+      <rect x="0" y="0" width="62" height="24" rx="12" fill="rgba(169,73,218,0.15)" stroke="#A949DA" stroke-width="0.5"/>
+      <text x="31" y="16" text-anchor="middle" fill="#A949DA" font-size="11" font-weight="600">Codex</text>
+    </g>
+    <g transform="translate(604, 283)">
+      <rect x="0" y="0" width="88" height="24" rx="12" fill="rgba(0,208,255,0.15)" stroke="#00D0FF" stroke-width="0.5"/>
+      <text x="44" y="16" text-anchor="middle" fill="#00D0FF" font-size="11" font-weight="600">Gemini CLI</text>
+    </g>
+    <g transform="translate(700, 283)">
+      <rect x="0" y="0" width="64" height="24" rx="12" fill="rgba(169,73,218,0.15)" stroke="#A949DA" stroke-width="0.5"/>
+      <text x="32" y="16" text-anchor="middle" fill="#A949DA" font-size="11" font-weight="600">Cursor</text>
+    </g>
+    <g transform="translate(772, 283)">
+      <rect x="0" y="0" width="86" height="24" rx="12" fill="rgba(0,208,255,0.15)" stroke="#00D0FF" stroke-width="0.5"/>
+      <text x="43" y="16" text-anchor="middle" fill="#00D0FF" font-size="11" font-weight="600">OpenCode</text>
+    </g>
   </g>
 </svg>
