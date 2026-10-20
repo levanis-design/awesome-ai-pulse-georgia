@@ -1,6 +1,6 @@
 {
-  "generated": "2026-10-20T12:28:38.386Z",
-  "totalRepos": 418,
+  "generated": "2026-10-20T12:49:18.149Z",
+  "totalRepos": 416,
   "categories": [
     {
       "slug": "coding",
@@ -21,7 +21,7 @@
       "emoji": "⚡",
       "english": "Skills, Plugins & Methodologies",
       "georgian": "უნარები, პლაგინები და მეთოდოლოგიები",
-      "count": 36
+      "count": 34
     },
     {
       "slug": "codeintel",
@@ -1012,28 +1012,6 @@
       "categoryEmoji": "⚡",
       "categoryGeorgian": "უნარები, პლაგინები და მეთოდოლოგიები",
       "descriptionEn": "Claude Code plugin that shows a plain-English rewrite of each assistant message, produced by a local LLM via ollama (default), the codex CLI, the Anthropic API or any OpenAI-compatible API. Display-only: the saved transcript keeps the original text."
-    },
-    {
-      "name": "Claude Code Setup",
-      "url": "https://github.com/tornikebolokadze1-cyber/claude-code-setup",
-      "stars": "13",
-      "description": "Claude Code Setup Claude Code-ის production-grade კონფიგურაციაა — 17 წესი, 7 hook, 7 შაბლონი და /setup ბრძანება ახალი პროექტებისთვის. ერთი ინსტალაციით: უსაფრთხოების წესები, ავტომატური ტესტირება, CI/CD ინტეგრაცია, საიდუმლოებების დაცვა. TypeScript-ში, საქართველოში შექმნილი. ახალი, ლოკალური პროექტია და ჯერ განვითარების ეტაპზეა.",
-      "starsNumeric": 13,
-      "categorySlug": "plugins",
-      "categoryEmoji": "⚡",
-      "categoryGeorgian": "უნარები, პლაგინები და მეთოდოლოგიები",
-      "descriptionEn": "Production-grade Claude Code setup: 17 rules, 7 hooks, 7 templates, /setup command. One install — security, testing, CI/CD, and safety guardrails from day one."
-    },
-    {
-      "name": "Georgian Payments Skills",
-      "url": "https://github.com/erekle1/georgian-payments-skills",
-      "stars": "9",
-      "description": "Georgian Payments Skills ქართული საბანკო API-ების ცოდნას AI ასისტენტებს სძენს — TBC Bank-ის (Checkout, TPay) და Bank of Georgia-ს (iPay, Installments, Open Banking) ინტეგრაციები. Python-ში, საქართველოში შექმნილი. ქართულ საგადახდო სისტემებთან მომუშავე დეველოპერებისთვის — AI-ს ექსპერტ-დონის ლოკალური ცოდნა, რომელიც სხვაგან არ არსებობს. ახალი ლოკალური რესურსია.",
-      "starsNumeric": 9,
-      "categorySlug": "plugins",
-      "categoryEmoji": "⚡",
-      "categoryGeorgian": "უნარები, პლაგინები და მეთოდოლოგიები",
-      "descriptionEn": "Teaches AI assistants the Georgian banking APIs — TBC Bank (Checkout, TPay) and Bank of Georgia (iPay, Installments, Open Banking) integrations. Written in Python, built in Georgia. Expert-level local knowledge for developers working with Georgian payment systems that does not exist elsewhere."
     },
     {
       "name": "Understand Anything",

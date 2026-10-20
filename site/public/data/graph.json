@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-20T12:27:58.050Z",
+  "generated": "2026-10-20T12:49:18.149Z",
   "categories": [
     {
       "id": "coding",
@@ -813,24 +813,6 @@
       "desc": "Claudish to English Claude Code-ის plugin-ია, რომელიც ასისტენტის ყოველ პასუხს „უბრალო ენაზე\" გადაწერილ ვერსიას ურთავს — ჟარგონით დატვირთული, მკვრივი ტექსტის გვერდით გასაგები ახსნა. გადაწერას ლოკალური მოდელი აკეთებს ollama-ს გავლით (ნაგულისხმევად), ან codex CLI, Anthropic API თუ ნებისმიერი OpenAI-თავსებადი endpoint. მხოლოდ ეკრანზე ცვლის: Claude-ის მსჯელობა და შენახული ტრანსკრიპტი ხელუხლებელი რჩება. თუ სესია ინგლისურის გარდა სხვა ენაზე მიდის, გადაწერაც იმავე ენაზეა. ზუსტად იმ ადამიანებისთვის, ვინც კოდს ვერ კითხულობს, მაგრამ Claude Code-ით აშენებს. MIT, 2026 წლის აგვისტოდან.",
       "descEn": "Claude Code plugin that shows a plain-English rewrite of each assistant message, produced by a local LLM via ollama (default), the codex CLI, the Anthropic API or any OpenAI-compatible API. Display-only: the saved transcript keeps the original text.",
       "stars": 2700
-    },
-    {
-      "id": "claude-code-setup",
-      "label": "Claude Code Setup",
-      "category": "plugins",
-      "url": "https://github.com/tornikebolokadze1-cyber/claude-code-setup",
-      "desc": "Claude Code Setup Claude Code-ის production-grade კონფიგურაციაა — 17 წესი, 7 hook, 7 შაბლონი და /setup ბრძანება ახალი პროექტებისთვის. ერთი ინსტალაციით: უსაფრთხოების წესები, ავტომატური ტესტირება, CI/CD ინტეგრაცია, საიდუმლოებების დაცვა. TypeScript-ში, საქართველოში შექმნილი. ახალი, ლოკალური პროექტია და ჯერ განვითარების ეტაპზეა.",
-      "descEn": "Production-grade Claude Code setup: 17 rules, 7 hooks, 7 templates, /setup command. One install — security, testing, CI/CD, and safety guardrails from day one.",
-      "stars": 13
-    },
-    {
-      "id": "georgian-payments-skills",
-      "label": "Georgian Payments Skills",
-      "category": "plugins",
-      "url": "https://github.com/erekle1/georgian-payments-skills",
-      "desc": "Georgian Payments Skills ქართული საბანკო API-ების ცოდნას AI ასისტენტებს სძენს — TBC Bank-ის (Checkout, TPay) და Bank of Georgia-ს (iPay, Installments, Open Banking) ინტეგრაციები. Python-ში, საქართველოში შექმნილი. ქართულ საგადახდო სისტემებთან მომუშავე დეველოპერებისთვის — AI-ს ექსპერტ-დონის ლოკალური ცოდნა, რომელიც სხვაგან არ არსებობს. ახალი ლოკალური რესურსია.",
-      "descEn": "Teaches AI assistants the Georgian banking APIs — TBC Bank (Checkout, TPay) and Bank of Georgia (iPay, Installments, Open Banking) integrations. Written in Python, built in Georgia. Expert-level local knowledge for developers working with Georgian payment systems that does not exist elsewhere.",
-      "stars": 9
     },
     {
       "id": "understand-anything",
@@ -4257,16 +4239,6 @@
       "type": "cluster"
     },
     {
-      "source": "claude-code-setup",
-      "target": "superpowers",
-      "type": "cluster"
-    },
-    {
-      "source": "georgian-payments-skills",
-      "target": "superpowers",
-      "type": "cluster"
-    },
-    {
       "source": "understand-anything",
       "target": "graphify",
       "type": "cluster"
@@ -6129,16 +6101,6 @@
     {
       "source": "claude-code",
       "target": "claudish-to-english",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
-      "target": "claude-code-setup",
-      "type": "hub"
-    },
-    {
-      "source": "claude-code",
-      "target": "georgian-payments-skills",
       "type": "hub"
     },
     {

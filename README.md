@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://awesome.re"><img src="https://awesome.re/badge.svg" alt="Awesome"/></a>
-  <img src="https://img.shields.io/badge/repos-418-00D0FF?style=flat-square&labelColor=111827&v=38" alt="Repos"/>
+  <img src="https://img.shields.io/badge/repos-416-00D0FF?style=flat-square&labelColor=111827&v=38" alt="Repos"/>
   <img src="https://img.shields.io/badge/categories-20-A949DA?style=flat-square&labelColor=111827" alt="Categories"/>
   <img src="https://img.shields.io/badge/made_in-Georgia_%F0%9F%87%AC%F0%9F%87%AA-00D0FF?style=flat-square&labelColor=111827" alt="Made in Georgia"/>
   <a href="https://aipulsegeorgia.ge"><img src="https://img.shields.io/badge/aipulsegeorgia.ge-website-A949DA?style=flat-square&labelColor=111827" alt="Website"/></a>
@@ -23,7 +23,7 @@
 
 ## ⚡ გამოიყენე Claude Code-ში / Cursor-ში — MCP Server-ით ან CLI-ით
 
-ეს მთელი კოლექცია ხელმისაწვდომია **MCP server-ად** — Claude Code-ის, Cursor-ის, Codex-ის ან ნებისმიერი MCP-თავსებადი client-ის შიგნიდან 418 რეპოს ეძებ ბუნებრივი ენით. ნაცვლად იმისა, რომ GitHub-ი გახსნა და README-ი დააქოქო, AI ასისტენტს ჰკითხე *"აი Pulse-ის კოლექციაში რა არის საუკეთესო RAG-ისთვის?"* — სწორ რეპოს ქართული აღწერით დაგიბრუნებს.
+ეს მთელი კოლექცია ხელმისაწვდომია **MCP server-ად** — Claude Code-ის, Cursor-ის, Codex-ის ან ნებისმიერი MCP-თავსებადი client-ის შიგნიდან 416 რეპოს ეძებ ბუნებრივი ენით. ნაცვლად იმისა, რომ GitHub-ი გახსნა და README-ი დააქოქო, AI ასისტენტს ჰკითხე *"აი Pulse-ის კოლექციაში რა არის საუკეთესო RAG-ისთვის?"* — სწორ რეპოს ქართული აღწერით დაგიბრუნებს.
 
 **MCP Install** — `~/.claude/claude_desktop_config.json` ან Cursor MCP settings-ში:
 
@@ -48,7 +48,7 @@ npx -p @aipulsegeorgia/mcp-server aipulse stats
 
 ბრძანებები: `categories` · `list` · `search` · `get` · `stats` — ფლაგებით `-c/--category`, `-n/--limit`, `-l/--lang en|ka|both`, `--json`.
 
-> *Available as an MCP server **and an `aipulse` CLI** — query 418 curated AI repos from Claude Code, Cursor, any MCP client, or straight from your terminal.* Full docs: [`mcp/README.md`](./mcp/README.md) · Source: [`mcp/`](./mcp/)
+> *Available as an MCP server **and an `aipulse` CLI** — query 416 curated AI repos from Claude Code, Cursor, any MCP client, or straight from your terminal.* Full docs: [`mcp/README.md`](./mcp/README.md) · Source: [`mcp/`](./mcp/)
 
 ---
 
@@ -184,8 +184,6 @@ npx -p @aipulsegeorgia/mcp-server aipulse stats
 | [Claude Plugins Community](https://github.com/anthropics/claude-plugins-community) | 4.7K | Claude Plugins Community Anthropic-ის ოფიციალური, მხოლოდ წასაკითხი სარკეა Claude Cowork-ისა და Claude Code-ის community plugin marketplace-ისა. `.claude-plugin/marketplace.json` ფაილი დასაყენებელი community plugin-ების სიაა, რომელიც ყოველ ღამე სინქრონდება Anthropic-ის შიდა კატალოგიდან; ყოველი ჩანაწერი claude.ai-ზე იყო წარდგენილი, ავტომატურ უსაფრთხოების სკანირებას გაივლო და გასავრცელებლად დამტკიცდა. Cowork-ში claude.com/plugins-იდან ეყენება, Claude Code-ში marketplace ბრძანებით. ოფიციალური claude-plugins-official-ის (ასევე ამ კოლექციაში) საზოგადოებრივი წყვილი; Apache-2.0, 2026 წლის მარტიდან. |
 | [Qwen-MM-Plugins](https://github.com/QwenLM/Qwen-MM-Plugins) | 3.1K | Qwen-MM-Plugins Qwen გუნდის ოფიციალური მულტიმოდალური plugin-ებია, რომლებიც ნებისმიერ agent harness-ს „მხედველობასა" და აუდიოს ამატებს — ტექსტური მოდელიც კი სურათებს, ეკრანის ანაბეჭდებსა და ჩანაწერებს Qwen-ის მოდელებით „ხედავს". სახელმძღვანელო ინსტალერი Claude Code-ს, Codex-ს, Gemini CLI-ს, OpenClaw-ს, Qwen Code-სა და Qoder-ს უჭერს მხარს; DeepSeek Harness-სა და Hermes-ში ხელით ეყენება. საერთო კონფიგურაცია `~/.qwen-mm-plugins/config`-ში ინახება. Apache-2.0, 2026 წლის ივლისიდან. |
 | [Claudish to English](https://github.com/gvzdv/claudish-to-english) | 2.7K | Claudish to English Claude Code-ის plugin-ია, რომელიც ასისტენტის ყოველ პასუხს „უბრალო ენაზე" გადაწერილ ვერსიას ურთავს — ჟარგონით დატვირთული, მკვრივი ტექსტის გვერდით გასაგები ახსნა. გადაწერას ლოკალური მოდელი აკეთებს ollama-ს გავლით (ნაგულისხმევად), ან codex CLI, Anthropic API თუ ნებისმიერი OpenAI-თავსებადი endpoint. მხოლოდ ეკრანზე ცვლის: Claude-ის მსჯელობა და შენახული ტრანსკრიპტი ხელუხლებელი რჩება. თუ სესია ინგლისურის გარდა სხვა ენაზე მიდის, გადაწერაც იმავე ენაზეა. ზუსტად იმ ადამიანებისთვის, ვინც კოდს ვერ კითხულობს, მაგრამ Claude Code-ით აშენებს. MIT, 2026 წლის აგვისტოდან. |
-| [Claude Code Setup](https://github.com/tornikebolokadze1-cyber/claude-code-setup) | 13 | Claude Code Setup Claude Code-ის production-grade კონფიგურაციაა — 17 წესი, 7 hook, 7 შაბლონი და /setup ბრძანება ახალი პროექტებისთვის. ერთი ინსტალაციით: უსაფრთხოების წესები, ავტომატური ტესტირება, CI/CD ინტეგრაცია, საიდუმლოებების დაცვა. TypeScript-ში, საქართველოში შექმნილი. ახალი, ლოკალური პროექტია და ჯერ განვითარების ეტაპზეა. |
-| [Georgian Payments Skills](https://github.com/erekle1/georgian-payments-skills) | 9 | Georgian Payments Skills ქართული საბანკო API-ების ცოდნას AI ასისტენტებს სძენს — TBC Bank-ის (Checkout, TPay) და Bank of Georgia-ს (iPay, Installments, Open Banking) ინტეგრაციები. Python-ში, საქართველოში შექმნილი. ქართულ საგადახდო სისტემებთან მომუშავე დეველოპერებისთვის — AI-ს ექსპერტ-დონის ლოკალური ცოდნა, რომელიც სხვაგან არ არსებობს. ახალი ლოკალური რესურსია. |
 
 ---
 
