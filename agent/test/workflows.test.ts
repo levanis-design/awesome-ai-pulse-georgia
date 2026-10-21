@@ -187,8 +187,11 @@ test("the push job takes only planned files, and checks their shape as data", ()
     new Set([CACHE_FILE, "mcp/data/repos.json", "site/public/data/graph.json"]),
   );
   const push = job("push");
-  assert.ok(push.includes(`git apply --numstat "$patch"`));
-  assert.ok(push.includes(`[[ " \${CHANGEABLE} " != *" \${path} "* ]]`));
+  // what the commit would change, the old name of a moved file included, each path compared
+  // whole: a substring test lets "docs/index.html site/index.html" pass for two listed names
+  assert.ok(push.includes("git diff --cached --numstat --no-renames"));
+  assert.ok(push.includes(`[ "$f" = "$1" ] && return 0`));
+  assert.doesNotMatch(push, /\*" \$\{path\} "\*/);
   assert.ok(push.includes(`awk '$1 != "100644"'`));
   assert.ok(push.includes(`sed -E 's/[0-9]+/0/g'`));
   assert.ok(push.includes(`jq -se 'length == 1'`));

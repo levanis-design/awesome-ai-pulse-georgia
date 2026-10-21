@@ -9,10 +9,11 @@ name: Agent apply
 #            main, rebuilds the derived data and runs every check: the README
 #            round trip, every hand-written count, the agent's tests and the
 #            MCP server's smoke test. The change leaves this job as a patch.
-#   push     contents: write, and no npm, npx or node at all. Checks the patch
-#            as data (only the files listed below; only numbers where only a
-#            number may change; data files that are one plain JSON value),
-#            applies it to the same commit of main and pushes one commit.
+#   push     contents: write, and no npm, npx or node at all. Applies the patch
+#            to the same commit of main and checks the result as data (only
+#            the files listed below; only numbers where only a number may
+#            change; data files that are one plain JSON value), then pushes
+#            one commit.
 #   tell     issues: write. Closes the applied issues with the commit link, or
 #            tells each one why nothing happened, also after a failed job.
 #
@@ -175,16 +176,20 @@ jobs:
 
       - name: Check and apply the change
         run: |
-          patch="$RUNNER_TEMP/apply/changes.patch"
-          # every file the patch touches is on the list, and changes as text
+          git apply --index "$RUNNER_TEMP/apply/changes.patch"
+          read -ra changeable <<< "$CHANGEABLE"
+          listed() { local f; for f in "${changeable[@]}"; do [ "$f" = "$1" ] && return 0; done; return 1; }
+          # every path the commit would change is one listed name, compared whole (a path with
+          # spaces cannot pass for two of them), and so is the old name of a moved file; and
+          # each changes as text
+          touched="$(git diff --cached --numstat --no-renames)"
           while IFS=$'\t' read -r added _deleted path; do
-            if [ "$added" = "-" ] || [[ " ${CHANGEABLE} " != *" ${path} "* ]]; then
+            [ -n "$added$path" ] || continue
+            if [ "$added" = "-" ] || ! listed "$path"; then
               echo "::error::the patch touches a file it may not change: ${path}"
               exit 1
             fi
-          done < <(git apply --numstat "$patch")
-          git apply --index "$patch"
-          read -ra changeable <<< "$CHANGEABLE"
+          done <<< "$touched"
           if git ls-files -s -- "${changeable[@]}" | awk '$1 != "100644"' | grep -q .; then
             echo "::error::the patch turns a file into something other than a plain file"
             exit 1
