@@ -1,0 +1,132 @@
+import assert from "node:assert/strict";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { after, test } from "node:test";
+import { reportApply, runApply } from "../src/apply.js";
+import { loadCategories, loadRules, REPO_ROOT } from "../src/config.js";
+import { readBadgeCounts, SPOTS, updateCounts } from "../src/counts.js";
+import type { RepoFacts } from "../src/facts.js";
+import type { GitHub } from "../src/github.js";
+import { issueBody, LABELS, type Proposal } from "../src/proposals.js";
+import { getRow, parseReadme, pathOf, serializeReadme, starValue } from "../src/readme.js";
+import type { Ctx } from "../src/scan.js";
+import { DESC_OK, facts, fakeTracker, issue, NOW, rawRepo } from "./helpers.js";
+
+// a throwaway copy of every file apply may touch
+const tmp = mkdtempSync(join(tmpdir(), "aipulse-apply-"));
+after(() => rmSync(tmp, { recursive: true, force: true }));
+for (const f of new Set([...SPOTS.map((s) => s.file), "mcp/data/github-cache.json"])) {
+  mkdirSync(dirname(join(tmp, f)), { recursive: true });
+  copyFileSync(resolve(REPO_ROOT, f), join(tmp, f));
+}
+const categories = loadCategories();
+const rules = loadRules();
+const readme = () => readFileSync(join(tmp, "README.md"), "utf-8");
+const original = readme();
+const start = parseReadme(original, categories);
+
+// real rows to act on
+const repoRows = (slug: string) => start.sections.find((s) => s.slug === slug)!.rows.filter((r) => /^[\w.-]+\/[\w.-]+$/.test(pathOf(r.url)));
+const removePath = pathOf(repoRows("voice").at(-1)!.url);
+const [renameRow, englishRow] = repoRows("coding").filter((r) => !r.desc.includes("შენიშვნა:"));
+const renamePath = pathOf(renameRow!.url);
+const renamedTo = `renamed-org/${renamePath.split("/")[1]}`;
+const englishPath = pathOf(englishRow!.url);
+const note = "შენიშვნა: 2025 წლის მაისის შემდეგ აღარ განახლებულა.";
+
+const owner = rules.repo.split("/")[0]!;
+const approved = [LABELS.proposal, LABELS.approved];
+const filed = (n: number, p: Proposal, author = "github-actions[bot]") => issue(n, { body: issueBody(p, categories), labels: approved, user: { login: author } });
+const add = (repo: string, name: string, category: string): Proposal => ({ type: "add", repo, name, category, description: DESC_OK, stars: 1, why: "x", warnings: [], evidence: {} });
+
+const tracker = fakeTracker(rules.repo, [
+  filed(11, add("acme/voice-kit", "Voice Kit Test", "voice")),
+  filed(12, add("acme/agent-kit", "Agent Kit Test", "coding"), owner),
+  filed(13, { type: "remove", repo: removePath, reason: "below-floor", detail: "x" }),
+  filed(14, { type: "rename", from: renamePath, to: renamedTo }),
+  filed(15, { type: "note", repo: renamePath, note }), // still names the old path
+  filed(16, { type: "english", updates: [{ repo: englishPath, description: "Fresh English text" }] }),
+  filed(17, add("evil/repo", "Evil", "coding"), "mallory"),
+  filed(18, { type: "describe", repo: englishPath, old: "stale text", new: DESC_OK, why: "x" }),
+  filed(19, add("Wei-Shaw/sub2api", "Pool", "tokens")),
+  issue(20, { body: "please add something", labels: approved, user: { login: owner } }),
+]);
+
+const live = new Map<string, RepoFacts>([
+  ["acme/voice-kit", facts("acme/voice-kit", { stars: 15_000 })],
+  ["acme/agent-kit", facts("acme/agent-kit", { stars: 7_500 })],
+  ["wei-shaw/sub2api", facts("Wei-Shaw/sub2api")],
+  [renamePath.toLowerCase(), facts(renamedTo)],
+]);
+const gh = {
+  rest: tracker.client.rest,
+  async graphqlPartial(query: string) {
+    const data: Record<string, unknown> = {};
+    const errors: Array<{ type: string; message: string }> = [];
+    for (const m of query.matchAll(/(r\d+): repository\(owner: "([^"]+)", name: "([^"]+)"\)/g)) {
+      const f = live.get(`${m[2]}/${m[3]}`);
+      data[m[1]!] = f ? rawRepo(f) : null;
+      if (!f) errors.push({ type: "NOT_FOUND", message: "not found" });
+    }
+    return { data, errors };
+  },
+} as unknown as GitHub;
+const ctx: Ctx = { gh, rules, categories, root: tmp, llm: { apiKey: undefined, model: "m" }, now: NOW };
+
+test("a dry run reports the same outcome and writes nothing", async () => {
+  const r = await runApply(ctx, { dryRun: true });
+  assert.deepEqual(r.applied.map((a) => a.number), [14, 13, 15, 11, 12, 16]);
+  assert.deepEqual(r.changedFiles, []);
+  assert.equal(readme(), original);
+});
+
+test("approved proposals land in a fixed order; untrusted, stale and excluded ones fail with a reason", async () => {
+  const r = await runApply(ctx, { dryRun: false });
+  assert.deepEqual(r.applied.map((a) => a.number), [14, 13, 15, 11, 12, 16]);
+  const why = Object.fromEntries(r.failed.map((f) => [f.number, f.error]));
+  assert.match(why[17] ?? "", /filed by mallory/);
+  assert.match(why[18] ?? "", /description changed/);
+  assert.match(why[19] ?? "", /exclusion list/);
+  assert.match(why[20] ?? "", /no readable proposal/);
+  assert.equal(r.failed.length, 4);
+  assert.deepEqual(r.counts.after, { repos: r.counts.before.repos + 1, categories: r.counts.before.categories });
+
+  const text = readme();
+  const doc = parseReadme(text, categories);
+  assert.equal(serializeReadme(doc), text);
+  assert.equal(getRow(doc, removePath), undefined);
+  assert.equal(getRow(doc, "acme/voice-kit")?.stars, "15K"); // fresh stars at apply time, not the proposal's
+  assert.equal(getRow(doc, "acme/agent-kit")?.stars, "7.5K");
+  const voice = doc.sections.find((s) => s.slug === "voice")!.rows;
+  const at = voice.findIndex((x) => x.name === "Voice Kit Test");
+  assert.ok(at >= 0);
+  assert.ok(voice.slice(0, at).every((x) => starValue(x.stars) >= 15_000), "every row above has at least as many stars");
+  assert.ok(at === voice.length - 1 || starValue(voice[at + 1]!.stars) < 15_000, "the row below has fewer");
+  assert.equal(getRow(doc, renamePath), undefined);
+  assert.ok(getRow(doc, renamedTo)?.desc.endsWith(` ${note}`), "the note follows the rename made in the same run");
+
+  const after = readBadgeCounts(text);
+  assert.deepEqual(after, r.counts.after);
+  assert.doesNotThrow(() => updateCounts(tmp, after, after, false)); // every count spot moved with it
+  const cache = JSON.parse(readFileSync(join(tmp, "mcp/data/github-cache.json"), "utf-8")) as Record<string, { description: string; fetchedAt: string }>;
+  assert.deepEqual(cache[englishPath], { description: "Fresh English text", fetchedAt: NOW.toISOString() });
+  for (const f of ["README.md", "docs/index.html", "mcp/smithery.yaml", "mcp/data/github-cache.json"]) assert.ok(r.changedFiles.includes(f), f);
+
+  await reportApply(ctx, r, { changeUrl: "https://github.com/owner/repo/commit/abc1234" });
+  assert.deepEqual(tracker.labelsOf(11).sort(), [LABELS.applied, LABELS.proposal].sort());
+  assert.equal(tracker.issues.get(11)?.state, "closed");
+  assert.ok(tracker.comments.some((c) => c.number === 11 && c.body.includes("commit/abc1234")));
+  assert.deepEqual(tracker.labelsOf(17).sort(), [LABELS.failed, LABELS.proposal].sort());
+  assert.equal(tracker.issues.get(17)?.state, "open"); // the owner can still read why, and re-approve
+  assert.ok(tracker.comments.some((c) => c.number === 18 && c.body.includes("description changed")));
+});
+
+test("when the checks fail after apply, nothing is closed and approvals turn into failures", async () => {
+  const t = fakeTracker(rules.repo, [filed(31, { type: "remove", repo: "x/y", reason: "other", detail: "x" })]);
+  const c: Ctx = { ...ctx, gh: { rest: t.client.rest } as unknown as GitHub };
+  await reportApply(c, { applied: [{ number: 31, title: "", summary: "s" }], failed: [], counts: { before: { repos: 1, categories: 1 }, after: { repos: 0, categories: 1 } }, changedFiles: [] }, { error: "verify: 2 problems" });
+  assert.deepEqual(t.labelsOf(31).sort(), [LABELS.failed, LABELS.proposal].sort());
+  assert.equal(t.issues.get(31)?.state, "open");
+  assert.ok(t.comments[0]?.body.includes("verify: 2 problems"));
+});
