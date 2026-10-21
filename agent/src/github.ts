@@ -101,14 +101,16 @@ export class GitHub {
     return res.items;
   }
 
-  /** Raw README text, or null when the repo has none. */
+  /**
+   * Raw README text, or null when the repo has none. Read as text, not through rest():
+   * GitHub labels the raw body `application/vnd.github.raw+json`, which is not JSON.
+   */
   async readme(fullName: string): Promise<string | null> {
-    try {
-      return await this.rest<string>("GET", `/repos/${fullName}/readme`, undefined, "application/vnd.github.raw+json");
-    } catch (err) {
-      if (err instanceof GitHubError && err.status === 404) return null;
-      throw err;
-    }
+    const path = `/repos/${fullName}/readme`;
+    const res = await this.send(`${API}${path}`, { headers: this.headers("application/vnd.github.raw+json") });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new GitHubError(`GET ${path} → ${res.status}: ${(await res.text()).slice(0, 300)}`, res.status);
+    return res.text();
   }
 
   /** Plain public page (GitHub trending). No token: the page is public HTML. */
