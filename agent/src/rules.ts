@@ -27,8 +27,9 @@ export function isVendor(path: string, rules: Rules): boolean {
   return rules.vendorOwners.some((o) => o.toLowerCase() === owner);
 }
 
-/** Signs of bought stars. Empty = looks organic. */
+/** Signs of bought stars. Empty = looks organic. Labs often publish a squashed history, so vendors are not judged by it. */
 export function farmingSigns(f: RepoFacts, rules: Rules): string[] {
+  if (isVendor(f.nameWithOwner, rules)) return [];
   const signs: string[] = [];
   const ratio = f.stars > 0 ? f.forks / f.stars : 1;
   if (f.stars >= 1000 && ratio < rules.thresholds.minForkRatio) {
@@ -70,7 +71,15 @@ export function staleNote(pushedAt: string): string {
   return `შენიშვნა: ${d.getUTCFullYear()} წლის ${GEN[d.getUTCMonth()]} შემდეგ აღარ განახლებულა.`;
 }
 
-/** Already carries a dated note of any wording? Then do not add another. */
+/** Already says it went quiet, in any wording? Then do not add another note. */
 export function hasStaleNote(desc: string): boolean {
-  return /შენიშვნა:.*(აღარ|შეჩერდა|დაარქივ|დაიხურა)/.test(desc);
+  return /შენიშვნა:.*(აღარ|შეჩერდა|დაარქივ|დაიხურა)|აღარ (განახლ|ვითარდ)|განვითარება შეჩერ|შეჩერებულია|დაარქივებულია/.test(desc);
+}
+
+const AI_WORDS =
+  /\b(ai|llms?|gpt\w*|agents?|agentic|mcp|claude|codex|gemini|openai|anthropic|rag|copilot|chatbots?|prompts?|embeddings?|vector|transformers?|diffusion|tts|asr|stt|speech|voice|whisper|ocr|machine[- ]learning|deep[- ]learning|neural|inference|fine-?tun\w*|lora|ollama|llama\w*|qwen\w*|deepseek|mistral|langchain|langgraph|generative|genai|nlp|computer[- ]vision|ml|text-to-\w+)\b/i;
+
+/** A free first look before any model is asked: does the name, description or a topic say AI at all? */
+export function aiSignal(f: RepoFacts): boolean {
+  return AI_WORDS.test([f.nameWithOwner.replace(/[/_.]/g, " "), f.description ?? "", ...f.topics].join(" "));
 }

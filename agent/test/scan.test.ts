@@ -9,8 +9,9 @@ import { GitHub } from "../src/github.js";
 import { ISSUE_BODY_MAX, issueBody } from "../src/proposals.js";
 import { parseReadme } from "../src/readme.js";
 import { staleNote } from "../src/rules.js";
-import { englishProposal, healthProposals, type Ctx } from "../src/scan.js";
-import { CATS, facts, miniReadme, NOW } from "./helpers.js";
+import { considerCandidates, englishProposal, healthProposals, NO_AI_SIGNAL, rankCandidates, type Ctx } from "../src/scan.js";
+import { remember, type Memory } from "../src/memory.js";
+import { CATS, DESC_OK, facts, miniReadme, NOW } from "./helpers.js";
 
 const root = mkdtempSync(join(tmpdir(), "aipulse-scan-"));
 after(() => rmSync(root, { recursive: true, force: true }));
@@ -94,4 +95,61 @@ test("a big English batch is cut to what one GitHub issue can hold", () => {
   assert.ok(p.updates.length > 100 && p.updates.length < 300, `kept ${p.updates.length}`);
   assert.ok(issueBody(p, CATS).length <= ISSUE_BODY_MAX);
   assert.equal(p.updates[0]!.repo, "o/r0"); // the rest waits for the next scan, in order
+});
+
+test("new repos are considered before older big misses; anything under its bar is dropped", () => {
+  const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
+  const pool = [
+    facts("old/huge", { createdAt: daysAgo(700), stars: 90_000 }),
+    facts("new/viral", { createdAt: daysAgo(10), stars: 6_000 }),
+    facts("old/small", { createdAt: daysAgo(700), stars: 15_000 }),
+    facts("new/tiny", { createdAt: daysAgo(10), stars: 4_000 }),
+    facts("new/bigger", { createdAt: daysAgo(20), stars: 9_000 }),
+  ];
+  assert.deepEqual(rankCandidates(ctx, pool).map((f) => f.nameWithOwner), ["new/bigger", "new/viral", "old/huge"]);
+});
+
+test("everything decidable for free is decided before a model is asked, and verdicts are remembered", async (t) => {
+  const aiDesc = { description: "An agent framework for LLM apps.", topics: ["llm"], createdAt: new Date(NOW.getTime() - 10 * 86_400_000).toISOString() };
+  const ranked = [
+    facts("facebook/react", { description: "The library for web and native user interfaces.", topics: ["javascript"] }),
+    facts("Wei-Shaw/sub2api", aiDesc),
+    facts("farm/stars", { ...aiDesc, stars: 9_000, forks: 10 }),
+    facts("held/open", aiDesc),
+    facts("judged/before", { ...aiDesc, stars: 10_000 }),
+    facts("good/one", aiDesc),
+    facts("good/two", aiDesc),
+    facts("good/three", aiDesc),
+  ];
+  const memory: Memory = {};
+  remember(memory, "judged/before", "not a fit for the collection: a course platform", 9_000, new Date(NOW.getTime() - 5 * 86_400_000));
+  const blocked = (_p: { type: string }, key: string) => key === "add:held/open";
+  const asked: string[] = [];
+  const f = t.mock.method(globalThis, "fetch", async (_url: unknown, init: RequestInit) => {
+    const body = JSON.parse(init.body as string) as { system: string; messages: Array<{ content: string }> };
+    const repo = /"repo": "([^"]+)"/.exec(body.messages[0]!.content)?.[1] ?? "?";
+    asked.push(repo);
+    const fit = repo === "good/one";
+    const text = body.system.startsWith("You write catalogue entries")
+      ? JSON.stringify({ relevant: fit, category: "coding", name: "Good One", description: DESC_OK, why: fit ? "ფრეიმვორკია." : "სასწავლო კურსია.", confidence: "high" })
+      : JSON.stringify({ ok: true, problems: [] });
+    return new Response(JSON.stringify({ content: [{ type: "text", text }] }), { status: 200, headers: { "content-type": "application/json" } });
+  });
+  const withLlm: Ctx = { ...ctx, llm: { apiKey: "k-test", model: "m" }, gh: { readme: async () => "# readme" } as unknown as GitHub };
+  const run = await considerCandidates(withLlm, doc, ranked, { budget: 2, memory, blocked });
+
+  assert.equal(run.drafted, 2);
+  assert.deepEqual(run.proposals.map((p) => ("repo" in p ? p.repo : "")), ["good/one"]);
+  const why = Object.fromEntries(run.skipped.map((s) => [s.repo, s.why]));
+  assert.equal(why["facebook/react"], NO_AI_SIGNAL);
+  assert.match(why["Wei-Shaw/sub2api"] ?? "", /subscription pooling/);
+  assert.match(why["farm/stars"] ?? "", /forks\/stars/);
+  assert.match(why["judged/before"] ?? "", /^judged 2026-10-16: not a fit/);
+  assert.match(why["good/two"] ?? "", /not a fit/);
+  assert.equal(why["good/three"], undefined); // budget spent: left for tomorrow, not judged
+  assert.deepEqual(run.held.map((h) => h.key), ["add:held/open"]);
+  assert.deepEqual([...new Set(asked)], ["good/one", "good/two"]); // the model never saw the others
+  assert.equal(f.mock.callCount(), 3); // good/one: draft + fact check; good/two: draft only
+  assert.match(memory["good/two"]?.verdict ?? "", /not a fit/);
+  assert.equal(memory["good/one"], undefined); // a proposal is tracked by its issue, not here
 });

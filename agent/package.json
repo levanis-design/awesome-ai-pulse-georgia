@@ -12,6 +12,7 @@
     "suggest": "tsx src/cli.ts suggest",
     "apply": "tsx src/cli.ts apply",
     "report": "tsx src/cli.ts report",
+    "verify": "tsx src/cli.ts verify",
     "serve": "tsx src/cli.ts serve",
     "build:gateway": "tsup",
     "test": "tsx --test test/*.test.ts",

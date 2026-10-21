@@ -11,9 +11,10 @@ import { fetchFacts, type RepoFacts } from "./facts.js";
 import type { GitHub } from "./github.js";
 import { descriptionProblems, draftEntry, factCheck, NoLlmError, reviewEntry, reviseEntry, type LlmConfig } from "./llm.js";
 import { log } from "./log.js";
-import { ISSUE_BODY_MAX, IssueStore, isBlocked, issueBody, proposalKey, type IssueRecord, type Proposal } from "./proposals.js";
+import { judgedRecently, remember, type Memory } from "./memory.js";
+import { ISSUE_BODY_MAX, IssueStore, isBlocked, issueBody, proposalKey, type IssueRecord, type Proposal, type ProposalType } from "./proposals.js";
 import { allPaths, getRow, parseReadme, type ReadmeDoc } from "./readme.js";
-import { belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isStale, isVendor, ownerOf, staleNote } from "./rules.js";
+import { aiSignal, belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isStale, isVendor, ownerOf, staleNote } from "./rules.js";
 
 export type Ctx = {
   gh: GitHub;
@@ -108,7 +109,8 @@ function styleExamples(doc: ReadmeDoc): string[] {
   return picked.length > 0 ? picked : doc.sections.slice(0, 3).map((s) => s.rows[0]?.desc ?? "").filter(Boolean);
 }
 
-export type Evaluation = { proposal: Proposal } | { skip: string };
+/** `retry`: worth asking again tomorrow (a formatting slip), unlike a verdict on the repo itself. */
+export type Evaluation = { proposal: Proposal } | { skip: string; retry?: boolean };
 
 /** Turn one unlisted repo into an `add` proposal, or say why not. */
 export async function evaluateRepo(
@@ -142,7 +144,7 @@ export async function evaluateRepo(
     if (!check.ok) warnings.push(...check.problems.map((p) => `ფაქტების შემოწმება: ${p}`));
   }
   const shape = descriptionProblems(description);
-  if (shape.length > 0) return { skip: `description failed the format check: ${shape.join("; ")}` };
+  if (shape.length > 0) return { skip: `description failed the format check: ${shape.join("; ")}`, retry: true };
   if (draft.confidence === "low") warnings.push("მოდელი კატეგორიაში ან აღწერაში დარწმუნებული არ არის — ყურადღებით გადახედე.");
   const taken = new Set(doc.sections.flatMap((s) => s.rows.map((r) => r.name.toLowerCase())));
   const name = taken.has(draft.name.toLowerCase()) ? `${draft.name} (${ownerOf(path)})` : draft.name;
@@ -161,11 +163,18 @@ export async function evaluateRepo(
   };
 }
 
-async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, RepoFacts | null>, english: Proposal | null): Promise<Proposal[]> {
+export type Blocked = (p: { type: ProposalType }, key: string) => boolean;
+
+/**
+ * A changed GitHub description hints that the project changed, so those repos
+ * get their Georgian entry re-read, a few per day, each at most once a month.
+ */
+async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, RepoFacts | null>, english: Proposal | null, memory: Memory, blocked: Blocked): Promise<Proposal[]> {
   if (!english || english.type !== "english") return [];
   const changed = english.updates
     .map((u) => ({ u, f: facts.get(u.repo.toLowerCase()) }))
     .filter((x): x is { u: { repo: string; description: string }; f: RepoFacts } => !!x.f)
+    .filter(({ u, f }) => !judgedRecently(memory, `review:${u.repo}`, f.stars, ctx.now) && !blocked({ type: "describe" }, `describe:${u.repo.toLowerCase()}`))
     .sort((a, b) => b.f.stars - a.f.stars)
     .slice(0, ctx.rules.thresholds.maxDescriptionReviewsPerScan);
   const out: Proposal[] = [];
@@ -173,6 +182,7 @@ async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, Repo
     const row = getRow(doc, u.repo);
     if (!row) continue;
     const review = await reviewEntry(ctx.llm, { facts: f, readme: await ctx.gh.readme(f.nameWithOwner), current: row.desc });
+    remember(memory, `review:${u.repo}`, review.stillAccurate ? "still accurate" : "new description proposed", f.stars, ctx.now);
     if (review.stillAccurate || !review.description) continue;
     const next = review.description.trim();
     if (descriptionProblems(next).length > 0) continue;
@@ -181,8 +191,74 @@ async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, Repo
   return out;
 }
 
-export async function runScan(ctx: Ctx, opts: { dryRun: boolean; discover: boolean; maxNew?: number }): Promise<ScanReport> {
+export const NO_AI_SIGNAL = "no AI signal in its name, description or topics";
+
+/**
+ * Candidates over the star bar, new repos first (catching what just came out is
+ * the point of a daily scan), then older big misses; most stars first in each.
+ */
+export function rankCandidates(ctx: Ctx, pool: RepoFacts[]): RepoFacts[] {
+  const isNew = (f: RepoFacts) => (ctx.now.getTime() - new Date(f.createdAt).getTime()) / 86_400_000 <= ctx.rules.thresholds.discoverWindowDays;
+  return pool.filter((f) => clearsStarBar(f, ctx.rules, ctx.now)).sort((a, b) => Number(isNew(b)) - Number(isNew(a)) || b.stars - a.stars);
+}
+
+export type CandidateRun = Pick<ScanReport, "proposals" | "skipped" | "held"> & { drafted: number };
+
+/**
+ * Walk the ranked candidates and draft entries for at most `budget` of them.
+ * Everything that can be decided for free (exclusions, farming signs, no AI
+ * signal, an open or rejected proposal, a recent verdict) is decided before a
+ * model is asked, so the budget goes to repos that could actually be added.
+ */
+export async function considerCandidates(ctx: Ctx, doc: ReadmeDoc, ranked: RepoFacts[], opts: { budget: number; memory: Memory; blocked: Blocked }): Promise<CandidateRun> {
+  const run: CandidateRun = { proposals: [], skipped: [], held: [], drafted: 0 };
+  for (const f of ranked) {
+    if (run.drafted >= opts.budget) break;
+    const path = f.nameWithOwner;
+    const quick = exclusionReason(path, ctx.rules) ?? (farmingSigns(f, ctx.rules).join(", ") || null) ?? (aiSignal(f) ? null : NO_AI_SIGNAL);
+    if (quick) {
+      run.skipped.push({ repo: path, why: quick });
+      continue;
+    }
+    const key = `add:${path.toLowerCase()}`;
+    if (opts.blocked({ type: "add" }, key)) {
+      run.held.push({ key, why: "already proposed, or rejected" });
+      continue;
+    }
+    const seen = judgedRecently(opts.memory, path, f.stars, ctx.now);
+    if (seen) {
+      run.skipped.push({ repo: path, why: `judged ${seen.at.slice(0, 10)}: ${seen.verdict}` });
+      continue;
+    }
+    if (!ctx.llm.apiKey) {
+      run.skipped.push({ repo: path, why: `candidate (${f.stars} stars) waiting for ANTHROPIC_API_KEY` });
+      continue;
+    }
+    try {
+      run.drafted++;
+      const ev = await evaluateRepo(ctx, doc, f, { requireStarBar: true });
+      if ("proposal" in ev) run.proposals.push(ev.proposal);
+      else {
+        run.skipped.push({ repo: path, why: ev.skip });
+        if (!ev.retry) remember(opts.memory, path, ev.skip, f.stars, ctx.now);
+      }
+    } catch (err) {
+      if (err instanceof NoLlmError) break;
+      run.skipped.push({ repo: path, why: `evaluation failed: ${(err as Error).message.slice(0, 160)}` });
+    }
+  }
+  return run;
+}
+
+export type ScanOptions = { dryRun: boolean; discover: boolean; maxNew?: number; memory?: Memory };
+
+export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> {
   const report: ScanReport = { started: ctx.now.toISOString(), listed: 0, sources: [], proposals: [], filed: [], held: [], skipped: [], notes: [] };
+  const memory = opts.memory ?? {};
+  const store = new IssueStore(ctx.gh, ctx.rules.repo);
+  // what was proposed before decides what is still worth a model call, so it is read first
+  const history: Map<string, IssueRecord[]> = opts.dryRun ? await store.history().catch(() => new Map()) : await store.history();
+  const blocked: Blocked = (p, key) => isBlocked(p, history.get(key) ?? [], ctx.now);
   const doc = loadDoc(ctx);
   const listed = allPaths(doc).filter((p) => REPO_PATH.test(p));
   report.listed = listed.length;
@@ -197,7 +273,7 @@ export async function runScan(ctx: Ctx, opts: { dryRun: boolean; discover: boole
   if (!llmReady) report.notes.push("ANTHROPIC_API_KEY is not set: new repos and description reviews were not drafted.");
   if (llmReady) {
     try {
-      proposals.push(...(await reviewProposals(ctx, doc, facts, english)));
+      proposals.push(...(await reviewProposals(ctx, doc, facts, english, memory, blocked)));
     } catch (err) {
       report.notes.push(`description review stopped: ${(err as Error).message}`);
     }
@@ -211,40 +287,16 @@ export async function runScan(ctx: Ctx, opts: { dryRun: boolean; discover: boole
     report.sources.push(search.report, trending.report);
     const pool = [...new Set([...search.repos, ...trending.repos])].filter((p) => !listedLower.has(p.toLowerCase()));
     const poolFacts = await fetchFacts(ctx.gh, pool);
-    const ranked = [...poolFacts.values()]
-      .filter((f): f is RepoFacts => !!f && !listedLower.has(f.nameWithOwner.toLowerCase()))
-      .filter((f) => clearsStarBar(f, ctx.rules, ctx.now))
-      .sort((a, b) => b.stars - a.stars);
-    let drafted = 0;
-    const budget = opts.maxNew ?? ctx.rules.thresholds.maxNewPerScan;
-    for (const f of ranked) {
-      if (drafted >= budget) break;
-      const quick = exclusionReason(f.nameWithOwner, ctx.rules) ?? (farmingSigns(f, ctx.rules).join(", ") || null);
-      if (quick) {
-        report.skipped.push({ repo: f.nameWithOwner, why: quick });
-        continue;
-      }
-      if (!llmReady) {
-        report.skipped.push({ repo: f.nameWithOwner, why: `candidate (${f.stars} stars) waiting for ANTHROPIC_API_KEY` });
-        continue;
-      }
-      try {
-        drafted++;
-        const ev = await evaluateRepo(ctx, doc, f, { requireStarBar: true });
-        if ("skip" in ev) report.skipped.push({ repo: f.nameWithOwner, why: ev.skip });
-        else proposals.push(ev.proposal);
-      } catch (err) {
-        if (err instanceof NoLlmError) break;
-        report.skipped.push({ repo: f.nameWithOwner, why: `evaluation failed: ${(err as Error).message.slice(0, 160)}` });
-      }
-    }
+    const ranked = rankCandidates(ctx, [...poolFacts.values()].filter((f): f is RepoFacts => !!f && !listedLower.has(f.nameWithOwner.toLowerCase())));
+    const run = await considerCandidates(ctx, doc, ranked, { budget: opts.maxNew ?? ctx.rules.thresholds.maxNewPerScan, memory, blocked });
+    proposals.push(...run.proposals);
+    report.skipped.push(...run.skipped);
+    report.held.push(...run.held);
   }
 
-  const store = new IssueStore(ctx.gh, ctx.rules.repo);
-  const history: Map<string, IssueRecord[]> = opts.dryRun ? await store.history().catch(() => new Map()) : await store.history();
   for (const p of proposals) {
     const key = proposalKey(p);
-    if (isBlocked(p, history.get(key) ?? [], ctx.now)) report.held.push({ key, why: "already proposed, or rejected recently" });
+    if (blocked(p, key)) report.held.push({ key, why: "already proposed, or rejected recently" });
     else report.proposals.push(p);
   }
   if (!opts.dryRun && report.proposals.length > 0) {

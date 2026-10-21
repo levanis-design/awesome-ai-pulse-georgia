@@ -220,7 +220,7 @@ function toRecord(i: RawIssue): IssueRecord {
  * yes forever for a rejected addition; yes for 90 days after any other rejection.
  * Applied proposals never block (if the condition comes back, it is news).
  */
-export function isBlocked(p: Proposal, history: IssueRecord[], now = new Date()): boolean {
+export function isBlocked(p: { type: ProposalType }, history: IssueRecord[], now = new Date()): boolean {
   for (const i of history) {
     if (i.state === "open") return true;
     if (!i.labels.includes(LABELS.rejected)) continue;

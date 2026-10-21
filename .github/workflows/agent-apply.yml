@@ -1,0 +1,110 @@
+name: Agent apply
+
+# Carries out the proposals the owner approved (label agent:approved, added
+# from Grok Bot or by hand on GitHub). Every check runs before anything is
+# pushed: the README round trip, every hand-written count, the rebuilt MCP
+# and site data, the agent's tests and the MCP server's smoke test. If one
+# fails, nothing is pushed and each issue is told why.
+#
+# The push uses GITHUB_TOKEN, so — as with the star refreshes — it starts no
+# other workflow; the data rebuilt here is what mcp-data-sync would produce.
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+# one apply at a time; a burst of approvals collapses into the next run
+concurrency:
+  group: agent-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'agent:approved' && github.event.sender.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            agent/package-lock.json
+            mcp/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci --prefix agent --no-audit --no-fund
+          npm ci --prefix mcp --no-audit --no-fund
+
+      - name: Apply approved proposals
+        id: apply
+        working-directory: agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx tsx src/cli.ts apply --out "$RUNNER_TEMP/apply-result.json"
+
+      - name: Rebuild the derived data
+        id: rebuild
+        if: steps.apply.outputs.applied != '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm run build --prefix mcp
+          npm run build:site --prefix mcp
+          node site/scripts/build-graph.mjs
+
+      - name: Check that everything agrees
+        id: checks
+        if: steps.apply.outputs.applied != '0'
+        run: |
+          npm run verify --prefix agent
+          npm test --prefix agent
+          # the smoke test waits a fixed 1.5 s for a cold server and can miss once
+          npm run smoke --prefix mcp || npm run smoke --prefix mcp
+
+      - name: Commit and push
+        id: push
+        if: steps.apply.outputs.applied != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version --prefix mcp
+          git add README.md assets/banner.svg docs/index.html docs/data.js site/index.html \
+            site/public/data/graph.json mcp/README.md mcp/src/index.ts mcp/smithery.yaml \
+            mcp/package.json mcp/package-lock.json mcp/data/repos.json mcp/data/github-cache.json
+          numbers="$(jq -r '[.applied[].number | "#\(.)"] | join(", ")' "$RUNNER_TEMP/apply-result.json")"
+          git commit -m "feat(agent): apply approved proposals ${numbers}"
+          git push origin HEAD:main || { git pull --rebase origin main && git push origin HEAD:main; }
+          echo "url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Tell the issues
+        if: always() && steps.apply.outcome == 'success'
+        working-directory: agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLIED: ${{ steps.apply.outputs.applied }}
+          CHANGE_URL: ${{ steps.push.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          result="$RUNNER_TEMP/apply-result.json"
+          if [ -n "$CHANGE_URL" ]; then
+            npx tsx src/cli.ts report --result "$result" --commit "$CHANGE_URL"
+          elif [ "$APPLIED" = "0" ]; then
+            npx tsx src/cli.ts report --result "$result"
+          else
+            npx tsx src/cli.ts report --result "$result" --error "a check failed, so nothing was pushed — details: $RUN_URL"
+          fi

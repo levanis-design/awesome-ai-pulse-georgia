@@ -1,6 +1,7 @@
 /**
  * aipulse-agent — the curator's commands, run by the GitHub workflows:
  *   scan     check listed repos, look for new ones, file proposals
+ *            (--memory file keeps the model's verdicts between runs)
  *   suggest  answer one owner suggestion issue (--issue N)
  *   apply    apply approved proposals to the working tree (--out result.json)
  *   verify   check that the README, every count and the rebuilt data agree (exit 1 if not)
@@ -16,7 +17,8 @@ import { startGateway } from "./gateway-main.js";
 import { GitHub } from "./github.js";
 import { llmFromEnv } from "./llm.js";
 import { log } from "./log.js";
-import { runScan, runSuggestion, type Ctx, type ScanReport } from "./scan.js";
+import { loadMemory, saveMemory } from "./memory.js";
+import { NO_AI_SIGNAL, runScan, runSuggestion, type Ctx, type ScanReport } from "./scan.js";
 import { verifyTree } from "./verify.js";
 
 const { positionals, values } = parseArgs({
@@ -25,6 +27,7 @@ const { positionals, values } = parseArgs({
     "dry-run": { type: "boolean", default: false },
     "no-discover": { type: "boolean", default: false },
     "max-new": { type: "string" },
+    memory: { type: "string" },
     out: { type: "string" },
     issue: { type: "string" },
     issues: { type: "string" },
@@ -58,7 +61,11 @@ function summarize(r: ScanReport): string {
   ];
   if (r.notes.length) lines.push("", ...r.notes.map((n) => `- ⚠️ ${n}`));
   if (r.proposals.length) lines.push("", "### შეთავაზებები", ...r.proposals.map((p) => `- ${p.type}: ${"repo" in p ? p.repo : p.type === "rename" ? `${p.from} → ${p.to}` : `${p.updates.length} updates`}`));
-  if (r.skipped.length) lines.push("", `### გამოტოვებული (${r.skipped.length})`, ...r.skipped.slice(0, 25).map((s) => `- ${s.repo}: ${s.why}`));
+  // repos without any AI signal are the bulk of the trending pages: count them, list the rest
+  const noSignal = r.skipped.filter((s) => s.why === NO_AI_SIGNAL).length;
+  const other = r.skipped.filter((s) => s.why !== NO_AI_SIGNAL);
+  if (other.length) lines.push("", `### გამოტოვებული (${other.length})`, ...other.slice(0, 30).map((s) => `- ${s.repo}: ${s.why}`));
+  if (noSignal) lines.push("", `AI-სთან კავშირის გარეშე, მოდელისთვის არ გადაცემულა: ${noSignal}`);
   if (r.held.length) lines.push("", `შეკავებული (უკვე შეთავაზებულია ან უარყოფილია): ${r.held.length}`);
   return lines.join("\n");
 }
@@ -78,11 +85,15 @@ async function main(): Promise<void> {
   const dryRun = values["dry-run"] === true;
   switch (cmd) {
     case "scan": {
-      const report = await runScan(context(), {
+      const ctx = context();
+      const memory = loadMemory(values.memory);
+      const report = await runScan(ctx, {
         dryRun,
         discover: values["no-discover"] !== true,
+        memory,
         ...(values["max-new"] ? { maxNew: Number(values["max-new"]) } : {}),
       });
+      if (values.memory && !dryRun) saveMemory(values.memory, memory, ctx.now);
       if (values.out) writeFileSync(values.out, JSON.stringify(report, null, 2));
       const md = summarize(report);
       toStepSummary(md);

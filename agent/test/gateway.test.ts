@@ -24,11 +24,16 @@ const tracker = fakeTracker(REPO, [
   issue(5, { body: proposal, labels: [LABELS.proposal, LABELS.failed] }),
 ]);
 const extra: Array<{ method: string; path: string; body: unknown }> = [];
+const run = (conclusion: string | null, n: number) => ({ name: "x", status: conclusion ? "completed" : "in_progress", conclusion, html_url: `https://github.com/${REPO}/actions/runs/${n}`, created_at: "2026-10-21T08:00:00Z", event: "issues" });
 const github = {
   async rest<T>(method: string, path: string, body?: unknown): Promise<T> {
-    if (path.includes("/contents/") || path.includes("/actions/")) {
+    if (path.includes("/contents/") || path.includes("/actions/") || path.includes("/commits") || path.includes("/pulls")) {
       extra.push({ method, path, body });
-      return (path.includes("/contents/") ? "file text" : undefined) as T;
+      if (path.includes("/contents/")) return "file text" as T;
+      if (path.endsWith("/dispatches")) return undefined as T;
+      if (path.includes("/runs")) return { workflow_runs: [run("skipped", 1), run("success", 2), run("skipped", 3), run(null, 4)] } as T;
+      if (path.includes("/commits")) return [{ sha: "abcdef1234567", commit: { message: "feat(agent): apply #11\n\nbody", author: { date: "2026-10-21T08:05:00Z" } } }] as T;
+      return [] as T;
     }
     return tracker.client.rest<T>(method, path, body);
   },
@@ -152,6 +157,14 @@ test("file reading stays inside the repository", async () => {
 test("run_scan starts the scan workflow on the branch", async () => {
   await call("run_scan");
   assert.deepEqual(extra.at(-1), { method: "POST", path: `/repos/${REPO}/actions/workflows/agent-scan.yml/dispatches`, body: { ref: "main" } });
+});
+
+test("activity shows real runs of all three workflows, without the skipped ones", async () => {
+  const a = JSON.parse((await call("agent_activity")).text) as { runs: Array<{ workflow: string; conclusion: string | null }>; commits: Array<{ sha: string; message: string }> };
+  assert.deepEqual([...new Set(a.runs.map((r) => r.workflow))], ["agent-scan.yml", "agent-apply.yml", "agent-suggest.yml"]);
+  assert.ok(a.runs.every((r) => r.conclusion !== "skipped"));
+  assert.equal(a.runs.length, 6);
+  assert.deepEqual(a.commits, [{ sha: "abcdef1", message: "feat(agent): apply #11", date: "2026-10-21T08:05:00Z" }]);
 });
 
 test("a client that floods the gateway is slowed down", async () => {

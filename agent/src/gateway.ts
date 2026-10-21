@@ -275,14 +275,16 @@ export function createGateway(cfg: GatewayConfig): Server {
 
     server.registerTool(
       "agent_activity",
-      { description: "Recent agent runs (scan and apply), recent commits on the main branch and open pull requests.", inputSchema: {}, annotations: { readOnlyHint: true, openWorldHint: true } },
+      { description: "Recent agent runs (scan, apply, suggestion), recent commits on the main branch and open pull requests.", inputSchema: {}, annotations: { readOnlyHint: true, openWorldHint: true } },
       async () => {
         type Run = { name: string; status: string; conclusion: string | null; html_url: string; created_at: string; event: string };
         const runs = await Promise.all(
-          ["agent-scan.yml", "agent-apply.yml"].map((w) =>
+          ["agent-scan.yml", "agent-apply.yml", "agent-suggest.yml"].map((w) =>
             cfg.github
-              .rest<{ workflow_runs: Run[] }>("GET", `/repos/${cfg.repo}/actions/workflows/${w}/runs?per_page=3`)
-              .then((r) => r.workflow_runs.map((x) => ({ workflow: w, status: x.status, conclusion: x.conclusion, event: x.event, at: x.created_at, url: x.html_url })))
+              .rest<{ workflow_runs: Run[] }>("GET", `/repos/${cfg.repo}/actions/workflows/${w}/runs?per_page=15`)
+              // every label change starts the issue-triggered workflows; the skipped ones are noise
+              .then((r) => r.workflow_runs.filter((x) => x.conclusion !== "skipped").slice(0, 3))
+              .then((list) => list.map((x) => ({ workflow: w, status: x.status, conclusion: x.conclusion, event: x.event, at: x.created_at, url: x.html_url })))
               .catch(() => [{ workflow: w, status: "unavailable" }]),
           ),
         );
@@ -355,6 +357,11 @@ export function createGateway(cfg: GatewayConfig): Server {
         return json(res, 401, { error: "unauthorized" });
       }
       if (req.method !== "POST") return json(res, 405, { error: "this gateway is stateless; use POST" });
+      if (Number(req.headers["content-length"] ?? "0") > MAX_BODY) {
+        // refuse before reading; closing the connection keeps clients from reusing a half-read socket
+        res.setHeader("connection", "close");
+        return json(res, 413, { jsonrpc: "2.0", error: { code: -32600, message: "request too large" }, id: null });
+      }
       const body = await readBody(req);
       if (body && typeof body === "object" && (body as { method?: string }).method === "tools/call") {
         tool = (body as { params?: { name?: string } }).params?.name;
@@ -371,7 +378,10 @@ export function createGateway(cfg: GatewayConfig): Server {
       const status = (err as { status?: number }).status ?? 500;
       log.error("request failed", { error: (err as Error).message.slice(0, 200) });
       const message = status === 413 ? "request too large" : status === 400 ? "invalid JSON" : "internal error";
-      if (!res.headersSent) json(res, status, { jsonrpc: "2.0", error: { code: status === 400 ? -32700 : -32603, message }, id: null });
+      if (!res.headersSent) {
+        if (status === 413) res.setHeader("connection", "close");
+        json(res, status, { jsonrpc: "2.0", error: { code: status === 400 ? -32700 : -32603, message }, id: null });
+      }
     }
   });
 }
