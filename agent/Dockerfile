@@ -10,7 +10,7 @@ RUN npm ci --no-audit --no-fund
 COPY agent/tsconfig.json agent/tsup.config.ts ./
 COPY agent/src ./src
 COPY mcp/src /src/mcp/src
-RUN npx tsup
+RUN npm run build:gateway
 
 # The runtime image holds Node and one bundled file, nothing else.
 FROM node:22-alpine

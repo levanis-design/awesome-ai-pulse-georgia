@@ -5,6 +5,10 @@
 import type { Rules } from "./config.js";
 import type { RepoFacts } from "./facts.js";
 
+export const DAY_MS = 86_400_000;
+
+export const daysSince = (iso: string, now: Date): number => (now.getTime() - new Date(iso).getTime()) / DAY_MS;
+
 /** Why this repo must never be proposed, or null. Checks exact paths, then name patterns. */
 export function exclusionReason(path: string, rules: Rules): string | null {
   const lower = path.toLowerCase();
@@ -15,6 +19,11 @@ export function exclusionReason(path: string, rules: Rules): string | null {
     if (new RegExp(pattern, "i").test(lower)) return reason;
   }
   return null;
+}
+
+/** The exclusion reason for a listed repo, by its README path or by the name GitHub now gives it. */
+export function listedExclusion(path: string, f: RepoFacts | null, rules: Rules): string | null {
+  return exclusionReason(path, rules) ?? (f ? exclusionReason(f.nameWithOwner, rules) : null);
 }
 
 export function ownerOf(path: string): string {
@@ -71,15 +80,18 @@ export function monthsSince(iso: string, now: Date): number {
   return (now.getUTCFullYear() - then.getUTCFullYear()) * 12 + (now.getUTCMonth() - then.getUTCMonth());
 }
 
-export function isStale(f: RepoFacts, rules: Rules, now = new Date()): boolean {
+export function isStale(f: RepoFacts, rules: Rules, now: Date): boolean {
   return !f.isArchived && monthsSince(f.pushedAt, now) >= rules.thresholds.staleMonths;
 }
 
+/** Created within the discovery window: the lower star bar applies, and it is considered first. */
+export function isNewRepo(f: RepoFacts, rules: Rules, now: Date): boolean {
+  return daysSince(f.createdAt, now) <= rules.thresholds.discoverWindowDays;
+}
+
 /** Does a new or unlisted repo clear the star bar for its age? */
-export function clearsStarBar(f: RepoFacts, rules: Rules, now = new Date()): boolean {
-  const ageDays = (now.getTime() - new Date(f.createdAt).getTime()) / 86_400_000;
-  const bar = ageDays <= rules.thresholds.discoverWindowDays ? rules.thresholds.minStarsNew : rules.thresholds.minStarsOld;
-  return f.stars >= bar;
+export function clearsStarBar(f: RepoFacts, rules: Rules, now: Date): boolean {
+  return f.stars >= (isNewRepo(f, rules, now) ? rules.thresholds.minStarsNew : rules.thresholds.minStarsOld);
 }
 
 const GEN = ["იანვრის", "თებერვლის", "მარტის", "აპრილის", "მაისის", "ივნისის", "ივლისის", "აგვისტოს", "სექტემბრის", "ოქტომბრის", "ნოემბრის", "დეკემბრის"];

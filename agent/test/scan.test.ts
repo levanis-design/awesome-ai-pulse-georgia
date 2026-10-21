@@ -10,7 +10,7 @@ import { remember, type Memory } from "../src/memory.js";
 import { ISSUE_BODY_MAX, issueBody } from "../src/proposals.js";
 import { parseReadme } from "../src/readme.js";
 import { staleNote } from "../src/rules.js";
-import { considerCandidates, discoveryBroken, englishProposal, healthProposals, listedNames, NO_AI_SIGNAL, rankCandidates, type Ctx, type ScanReport } from "../src/scan.js";
+import { considerCandidates, discoveryBroken, englishProposal, healthProposals, listedNames, NO_AI_SIGNAL, rankCandidates, reviewProposals, type Ctx, type ScanReport } from "../src/scan.js";
 import { CATS, daysAgo, DESC_OK, facts, miniReadme, NOW, RULES } from "./helpers.js";
 
 const root = mkdtempSync(join(tmpdir(), "aipulse-scan-"));
@@ -27,6 +27,7 @@ const doc = parseReadme(
       "| [Hover](https://github.com/a/hover) | 3K | ზღვარზე. |",
       "| [Sentry](https://github.com/getsentry/sentry-mcp) | 934 | ოფიციალური. |",
       "| [Guide](https://github.com/a/guide/blob/main/x.md) | Guide | გზამკვლევი. |",
+      "| [Pool](https://github.com/Wei-Shaw/sub2api) | 9K | ეს რეპო მფლობელმა მოგვიანებით აკრძალა. |",
     ],
     [
       "| [Quiet](https://github.com/b/quiet) | 20K | ჩუმი. |",
@@ -37,7 +38,7 @@ const doc = parseReadme(
   CATS,
 );
 
-test("health: gone, archived, moved, sunk under the floor and gone quiet each become one proposal", () => {
+test("health: excluded, gone, archived, moved, sunk under the floor and gone quiet each become one proposal", () => {
   const live = new Map<string, RepoFacts | null>([
     ["a/gone", null],
     ["a/frozen", facts("a/frozen", { isArchived: true, pushedAt: "2025-02-03T00:00:00Z" })],
@@ -48,12 +49,15 @@ test("health: gone, archived, moved, sunk under the floor and gone quiet each be
     ["getsentry/sentry-mcp", facts("getsentry/sentry-mcp", { stars: 950 })],
     ["b/quiet", facts("b/quiet", { pushedAt: "2025-03-09T00:00:00Z" })],
     ["b/noted", facts("b/noted", { pushedAt: "2024-05-01T00:00:00Z" })],
+    // put on the exclusion list after it was listed: it leaves, whatever else is true of it
+    ["wei-shaw/sub2api", facts("Wei-Shaw/sub2api", { pushedAt: "2024-01-01T00:00:00Z" })],
   ]);
   assert.deepEqual(healthProposals(ctx, doc, live), [
     { type: "remove", repo: "a/gone", reason: "deleted", detail: "GitHub ამ მისამართზე რეპოს ვეღარ პოულობს" },
     { type: "remove", repo: "a/frozen", reason: "archived", detail: "ბოლო ცვლილება 2025-02-03" },
     { type: "rename", from: "a/moved", to: "neworg/moved" },
     { type: "remove", repo: "a/sunk", reason: "below-floor", detail: "ახლა 2,600 ვარსკვლავი აქვს, ზღვარი 3,000-ია" },
+    { type: "remove", repo: "Wei-Shaw/sub2api", reason: "excluded", detail: "subscription pooling" },
     { type: "note", repo: "b/quiet", note: staleNote("2025-03-09T00:00:00Z") },
   ]);
 });
@@ -88,6 +92,7 @@ test("English descriptions follow GitHub, but hand-written ones for empty GitHub
     ["a/hover", facts("a/hover", { description: "Same text" })],
     ["getsentry/sentry-mcp", facts("getsentry/sentry-mcp", { description: "   " })],
     ["b/quiet", facts("b/quiet", { description: "  Quiet text  " })],
+    ["b/noted", facts("b/noted", { description: "Two\nlines" })], // the issue's JSON block could not hold it
   ]);
   assert.deepEqual(englishProposal(ctx, doc, live), {
     type: "english",
@@ -176,6 +181,32 @@ test("everything decidable for free is decided before a model is asked, and verd
   assert.equal(f.mock.callCount(), 3); // good/one: draft + fact check; good/two: draft only
   assert.match(memory["good/two"]?.verdict ?? "", /not a fit/);
   assert.equal(memory["good/one"], undefined); // a proposal is tracked by its issue, not here
+});
+
+test("one failed or malformed review costs only itself, and only real verdicts are remembered", async (t) => {
+  const english = { type: "english" as const, updates: [{ repo: "a/moved", description: "x" }, { repo: "b/quiet", description: "y" }, { repo: "b/unknown", description: "z" }] };
+  const live = new Map<string, RepoFacts | null>([
+    ["a/moved", facts("a/moved", { stars: 30_000 })],
+    ["b/quiet", facts("b/quiet", { stars: 20_000 })],
+    ["b/unknown", facts("b/unknown", { stars: 9_000 })],
+  ]);
+  t.mock.method(globalThis, "fetch", async (_url: unknown, init: RequestInit) => {
+    const body = JSON.parse(init.body as string) as { messages: Array<{ content: string }> };
+    const repo = /"repo": "([^"]+)"/.exec(body.messages[0]!.content)?.[1];
+    if (repo === "b/unknown") return new Response("overloaded", { status: 400 });
+    const description = repo === "a/moved" ? DESC_OK : "ძალიან მოკლე.";
+    const text = JSON.stringify({ stillAccurate: false, description, why: "პროექტი შეიცვალა." });
+    return new Response(JSON.stringify({ content: [{ type: "text", text }] }), { status: 200, headers: { "content-type": "application/json" } });
+  });
+  const withLlm: Ctx = { ...ctx, llm: { apiKey: "k-test", model: "m" }, gh: { readme: async () => "# readme" } as unknown as GitHub };
+  const memory: Memory = {};
+  const r = await reviewProposals(withLlm, doc, live, english, memory, () => false);
+  assert.deepEqual(r.proposals, [{ type: "describe", repo: "a/moved", old: "გადატანილი.", new: DESC_OK, why: "პროექტი შეიცვალა." }]);
+  assert.match(r.notes.join(" | "), /review of b\/quiet: the new description failed the format check/);
+  assert.match(r.notes.join(" | "), /review of b\/unknown failed: Anthropic API 400/);
+  assert.equal(memory["review:a/moved"]?.verdict, "new description proposed");
+  assert.equal(memory["review:b/quiet"], undefined); // asked again tomorrow
+  assert.equal(memory["review:b/unknown"], undefined);
 });
 
 test("a scan whose every discovery source broke says so, instead of reporting nothing new", () => {

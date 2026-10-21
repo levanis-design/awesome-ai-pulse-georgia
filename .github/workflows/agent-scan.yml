@@ -38,7 +38,7 @@ jobs:
 
       - name: Install
         working-directory: agent
-        run: npm ci --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       # what the model already turned down, so it is not asked again every day
       - name: Restore the agent's memory

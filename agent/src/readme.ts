@@ -27,11 +27,12 @@ export function pathOf(url: string): string {
   return url.startsWith(GH) ? url.slice(GH.length) : url;
 }
 
+const MULTIPLIER: Record<string, number> = { "": 1, K: 1_000, M: 1_000_000 };
+
 export function starValue(cell: string): number {
   const m = /^(\d+(?:\.\d+)?)([KM]?)$/.exec(cell.trim());
   if (!m) return 0; // "Guide", "Gist": non-repo rows sort last
-  const mult = m[2] === "M" ? 1_000_000 : m[2] === "K" ? 1_000 : 1;
-  return Math.round(Number(m[1]) * mult);
+  return Math.round(Number(m[1]) * MULTIPLIER[m[2]!]!);
 }
 
 /**
@@ -155,12 +156,10 @@ export function totals(doc: ReadmeDoc): { repos: number; categories: number } {
 }
 
 /** Insert before the first row with fewer stars — the list's own ordering rule. */
-function insertByStars(s: Section, row: Row): number {
+function insertByStars(s: Section, row: Row): void {
   const v = starValue(row.stars);
   const pos = s.rows.findIndex((r) => starValue(r.stars) < v);
-  const at = pos < 0 ? s.rows.length : pos;
-  s.rows.splice(at, 0, row);
-  return at;
+  s.rows.splice(pos < 0 ? s.rows.length : pos, 0, row);
 }
 
 function assertValid(row: Row): void {
@@ -182,23 +181,12 @@ export function removeRow(doc: ReadmeDoc, path: string): Row {
   return hit.section.rows.splice(hit.index, 1)[0]!;
 }
 
-export function moveRow(doc: ReadmeDoc, path: string, toSlug: string): Row {
-  const target = section(doc, toSlug);
-  const hit = findRow(doc, path);
-  if (!hit) throw new ReadmeError(`${path} is not listed`);
-  if (hit.section.slug === toSlug) throw new ReadmeError(`${path} is already in ${toSlug}`);
-  const [row] = hit.section.rows.splice(hit.index, 1);
-  insertByStars(target, row!);
-  return row!;
-}
-
-/** Same repository under a new address: keeps its place and star cell. */
-export function renameRow(doc: ReadmeDoc, oldPath: string, newPath: string, newName?: string): Row {
+/** Same repository under a new address: keeps its place, name and star cell. */
+export function renameRow(doc: ReadmeDoc, oldPath: string, newPath: string): Row {
   const hit = findRow(doc, oldPath);
   if (!hit) throw new ReadmeError(`${oldPath} is not listed`);
   if (findRow(doc, newPath)) throw new ReadmeError(`${newPath} is already listed`);
-  const row = hit.section.rows[hit.index]!;
-  const next = { ...row, url: GH + newPath, name: newName ?? row.name };
+  const next = { ...hit.section.rows[hit.index]!, url: GH + newPath };
   assertValid(next);
   hit.section.rows[hit.index] = next;
   return next;

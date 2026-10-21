@@ -7,7 +7,6 @@ import { log } from "./log.js";
 
 export type RepoFacts = {
   nameWithOwner: string;
-  url: string;
   isArchived: boolean;
   isFork: boolean;
   isDisabled: boolean;
@@ -26,7 +25,6 @@ export type RepoFacts = {
 
 type RawRepo = {
   nameWithOwner: string;
-  url: string;
   isArchived: boolean;
   isFork: boolean;
   isDisabled: boolean;
@@ -45,18 +43,18 @@ type RawRepo = {
   } | null;
 };
 
-const FIELDS = `nameWithOwner url isArchived isFork isDisabled stargazerCount forkCount
+const FIELDS = `nameWithOwner isArchived isFork isDisabled stargazerCount forkCount
   watchers { totalCount } pushedAt createdAt description homepageUrl
   licenseInfo { spdxId } primaryLanguage { name }
   repositoryTopics(first: 12) { nodes { topic { name } } }
   defaultBranchRef { target { ... on Commit { history { totalCount } } } }`;
 
 const SAFE = /^[\w.-]+$/;
+const BATCH = 40;
 
 function toFacts(r: RawRepo): RepoFacts {
   return {
     nameWithOwner: r.nameWithOwner,
-    url: r.url,
     isArchived: r.isArchived,
     isFork: r.isFork,
     isDisabled: r.isDisabled,
@@ -81,12 +79,11 @@ function toFacts(r: RawRepo): RepoFacts {
 export async function fetchFacts(
   gh: GitHub,
   paths: string[],
-  batch = 40,
 ): Promise<Map<string, RepoFacts | null>> {
   const out = new Map<string, RepoFacts | null>();
   const unique = [...new Set(paths.map((p) => p.toLowerCase()))];
-  for (let i = 0; i < unique.length; i += batch) {
-    const chunk = unique.slice(i, i + batch);
+  for (let i = 0; i < unique.length; i += BATCH) {
+    const chunk = unique.slice(i, i + BATCH);
     const aliases: string[] = [];
     chunk.forEach((p, j) => {
       const [owner, name] = p.split("/");

@@ -11,9 +11,9 @@ import { after, test, type TestContext } from "node:test";
 import type { RepoFacts } from "../src/facts.js";
 import type { GitHub } from "../src/github.js";
 import type { Memory } from "../src/memory.js";
-import { LABELS, parseIssueBody } from "../src/proposals.js";
+import { LABELS, parseIssueBody, type AddProposal } from "../src/proposals.js";
 import { runScan, runSuggestion, type Ctx } from "../src/scan.js";
-import { CATS, DESC_OK, facts, fakeTracker, issue, miniReadme, NOW, rawRepo, RULES } from "./helpers.js";
+import { CATS, DESC_OK, facts, fakeGraphql, fakeTracker, issue, miniReadme, NOW, RULES } from "./helpers.js";
 
 const root = mkdtempSync(join(tmpdir(), "aipulse-flow-"));
 after(() => rmSync(root, { recursive: true, force: true }));
@@ -44,20 +44,7 @@ const tracker = fakeTracker(REPO, [
   issue(54, { body: "https://github.com/acme/brand-new", labels: [LABELS.suggestion], user: { login: "owner" } }),
   issue(55, { body: "https://github.com/a/newname", labels: [LABELS.suggestion], user: { login: "owner" } }),
 ]);
-const gh = {
-  rest: tracker.client.rest,
-  readme: async () => "# readme",
-  async graphqlPartial(query: string) {
-    const data: Record<string, unknown> = {};
-    const errors: Array<{ type: string; message: string }> = [];
-    for (const m of query.matchAll(/(r\d+): repository\(owner: "([^"]+)", name: "([^"]+)"\)/g)) {
-      const f = live.get(`${m[2]}/${m[3]}`);
-      data[m[1]!] = f ? rawRepo(f) : null;
-      if (!f) errors.push({ type: "NOT_FOUND", message: "not found" });
-    }
-    return { data, errors };
-  },
-} as unknown as GitHub;
+const gh = { rest: tracker.client.rest, readme: async () => "# readme", graphqlPartial: fakeGraphql(live) } as unknown as GitHub;
 const ctx: Ctx = { gh, rules: { ...RULES, repo: REPO }, categories: CATS, root, llm: { apiKey: "k-test", model: "m" }, now: NOW };
 
 /** Claude, as far as these flows need it: reviews say "changed", drafts say "fits", checks pass. */
@@ -124,7 +111,10 @@ test("suggestions: handled ones are left alone; no link, already listed and dupl
   assert.equal(proposed.outcome, "proposed");
   const filed = [...tracker.issues.values()].find((i) => parseIssueBody(i.body)?.type === "add");
   assert.ok(filed, "an add proposal was filed");
-  assert.ok(tracker.comments.some((c) => c.number === 53 && c.body.includes(`#${filed.number}`)));
+  // the chat may have made the suggestion, so the chat cannot approve what it led to
+  assert.equal((parseIssueBody(filed.body) as AddProposal).origin, "suggestion");
+  const answer = tracker.comments.find((c) => c.number === 53)?.body ?? "";
+  assert.ok(answer.includes(`#${filed.number}`) && answer.includes("Grok Bot ვერ დაამტკიცებს"), answer);
   assert.equal(f.mock.callCount(), 2); // draft + fact check
 
   const again = await runSuggestion(ctx, 54, false);

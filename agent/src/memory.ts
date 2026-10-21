@@ -5,13 +5,12 @@
  * one re-evaluation per repo.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { daysSince } from "./rules.js";
 
 export type Verdict = { verdict: string; at: string; stars: number };
 export type Memory = Record<string, Verdict>;
 
 const KEEP_DAYS = 30;
-const age = (v: Verdict, now: Date) =>
-  (now.getTime() - new Date(v.at).getTime()) / 86_400_000;
 
 export function loadMemory(path: string | undefined): Memory {
   if (!path) return {};
@@ -25,7 +24,7 @@ export function loadMemory(path: string | undefined): Memory {
 /** Write it back without the verdicts that are too old to matter. */
 export function saveMemory(path: string, memory: Memory, now: Date): void {
   const keep = Object.fromEntries(
-    Object.entries(memory).filter(([, v]) => age(v, now) < KEEP_DAYS),
+    Object.entries(memory).filter(([, v]) => daysSince(v.at, now) < KEEP_DAYS),
   );
   writeFileSync(path, `${JSON.stringify(keep, null, 2)}\n`, "utf-8");
 }
@@ -38,7 +37,7 @@ export function judgedRecently(
   now: Date,
 ): Verdict | null {
   const v = memory[path.toLowerCase()];
-  return v && age(v, now) < KEEP_DAYS && stars < v.stars * 2 ? v : null;
+  return v && daysSince(v.at, now) < KEEP_DAYS && stars < v.stars * 2 ? v : null;
 }
 
 export function remember(

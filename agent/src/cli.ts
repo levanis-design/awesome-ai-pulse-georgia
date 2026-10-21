@@ -9,11 +9,13 @@
  *   apply    apply approved proposals to the working tree (--out result.json,
  *            --issues 12,15 to take only those); exit 1 when the run itself stopped
  *   verify   check that the README, every count and the rebuilt data agree (exit 1 if not)
- *   report   tell the issues how apply went (--result file, --commit URL | --error text)
+ *   report   tell the issues how apply went (--result file; --commit URL when it was pushed,
+ *            --error text when it was not; neither when nothing was applied)
  *   serve    run the MCP gateway locally (MCP_TOKEN, GITHUB_TOKEN; AGENT_REPO, AGENT_BRANCH, PORT)
  * scan, suggest, apply and report take --dry-run (nothing is written to GitHub or to files).
  * Environment: GITHUB_TOKEN, ANTHROPIC_API_KEY, AGENT_MODEL, and AGENT_LOG_LEVEL=warn for quieter logs.
  */
+import { randomBytes } from "node:crypto";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { reportApply, runApply, type ApplyResult } from "./apply.js";
@@ -22,6 +24,7 @@ import { GitHub } from "./github.js";
 import { llmFromEnv } from "./llm.js";
 import { log } from "./log.js";
 import { loadMemory, saveMemory } from "./memory.js";
+import type { Proposal } from "./proposals.js";
 import { discoveryBroken, NO_AI_SIGNAL, runScan, runSuggestion, type Ctx, type ScanReport } from "./scan.js";
 import { verifyTree } from "./verify.js";
 
@@ -52,6 +55,18 @@ function context(): Ctx {
   };
 }
 
+/** What a proposal is about, in a few words. */
+function subject(p: Proposal): string {
+  switch (p.type) {
+    case "rename":
+      return `${p.from} → ${p.to}`;
+    case "english":
+      return `${p.updates.length} updates`;
+    default:
+      return p.repo;
+  }
+}
+
 /** A short Markdown summary for the workflow run page (and for people reading logs). */
 function summarize(r: ScanReport): string {
   const lines = [
@@ -64,7 +79,7 @@ function summarize(r: ScanReport): string {
     ...r.sources.map((s) => `| ${s.source} | ${s.ok ? "✅" : `❌ ${s.error ?? ""}`} | ${s.found} |`),
   ];
   if (r.notes.length) lines.push("", ...r.notes.map((n) => `- ⚠️ ${n}`));
-  if (r.proposals.length) lines.push("", "### შეთავაზებები", ...r.proposals.map((p) => `- ${p.type}: ${"repo" in p ? p.repo : p.type === "rename" ? `${p.from} → ${p.to}` : `${p.updates.length} updates`}`));
+  if (r.proposals.length) lines.push("", "### შეთავაზებები", ...r.proposals.map((p) => `- ${p.type}: ${subject(p)}`));
   // repos without any AI signal are the bulk of the trending pages: count them, list the rest
   const noSignal = r.skipped.filter((s) => s.why === NO_AI_SIGNAL).length;
   const other = r.skipped.filter((s) => s.why !== NO_AI_SIGNAL);
@@ -77,6 +92,20 @@ function summarize(r: ScanReport): string {
 function toStepSummary(md: string): void {
   const file = process.env["GITHUB_STEP_SUMMARY"];
   if (file) appendFileSync(file, `${md}\n`);
+}
+
+/**
+ * Reports carry text a model wrote after reading a stranger's README. On a runner a line
+ * of it could pass for a workflow command (::error::, ::add-mask::), so commands are
+ * switched off around it, with an end marker nobody can guess.
+ */
+function print(text: string): void {
+  if (process.env["GITHUB_ACTIONS"] !== "true") {
+    process.stdout.write(`${text}\n`);
+    return;
+  }
+  const end = randomBytes(16).toString("hex");
+  process.stdout.write(`::stop-commands::${end}\n${text}\n::${end}::\n`);
 }
 
 function setOutput(name: string, value: string): void {
@@ -99,7 +128,7 @@ async function main(): Promise<void> {
       if (values.out) writeFileSync(values.out, JSON.stringify(report, null, 2));
       const md = summarize(report);
       toStepSummary(md);
-      process.stdout.write(`${md}\n`);
+      print(md);
       if (discoveryBroken(report)) process.exitCode = 2; // "nothing new" would only be a guess
       return;
     }
@@ -107,7 +136,7 @@ async function main(): Promise<void> {
       const n = Number(values.issue);
       if (!Number.isInteger(n) || n <= 0) throw new Error("suggest needs --issue <number>");
       const r = await runSuggestion(context(), n, dryRun);
-      process.stdout.write(`${JSON.stringify(r, null, 2)}\n`);
+      print(JSON.stringify(r, null, 2));
       return;
     }
     case "apply": {
@@ -117,7 +146,6 @@ async function main(): Promise<void> {
       const result = await runApply(context(), { dryRun, ...(numbers ? { numbers } : {}) });
       if (values.out) writeFileSync(values.out, JSON.stringify(result, null, 2));
       setOutput("applied", String(result.applied.length));
-      setOutput("failed", String(result.failed.length));
       const md = [
         `## აგენტი: დამტკიცებული ცვლილებები`,
         ...(result.error ? [`⛔ გაშვება შეჩერდა და არაფერი შენახულა: ${result.error}`] : []),
@@ -126,7 +154,7 @@ async function main(): Promise<void> {
         ...result.failed.map((f) => `- ⚠️ #${f.number} ${f.error}`),
       ].join("\n");
       toStepSummary(md);
-      process.stdout.write(`${md}\n`);
+      print(md);
       // the result file is already written, so the issues can still be told why
       if (result.error) process.exitCode = 1;
       return;
@@ -135,7 +163,7 @@ async function main(): Promise<void> {
       if (!values.result) throw new Error("report needs --result <apply-result.json>");
       const result = JSON.parse(readFileSync(values.result, "utf-8")) as ApplyResult;
       if (dryRun) {
-        process.stdout.write(`would report ${result.applied.length} applied, ${result.failed.length} failed\n`);
+        print(`would report ${result.applied.length} applied, ${result.failed.length} failed`);
         return;
       }
       await reportApply(context(), result, { ...(values.commit ? { changeUrl: values.commit } : {}), ...(values.error ? { error: values.error } : {}) });
@@ -150,7 +178,7 @@ async function main(): Promise<void> {
     }
     case "serve": {
       // loaded only here: no other command needs the MCP SDK
-      const { startGateway } = await import("./gateway-main.js");
+      const { startGateway } = await import("./start.js");
       startGateway();
       return;
     }

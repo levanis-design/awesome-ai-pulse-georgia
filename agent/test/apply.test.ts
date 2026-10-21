@@ -10,8 +10,9 @@ import type { RepoFacts } from "../src/facts.js";
 import type { GitHub } from "../src/github.js";
 import { issueBody, LABELS, type Proposal } from "../src/proposals.js";
 import { getRow, parseReadme, pathOf, serializeReadme, starValue } from "../src/readme.js";
+import { hasStaleNote, isVendor } from "../src/rules.js";
 import type { Ctx } from "../src/scan.js";
-import { DESC_OK, facts, fakeTracker, issue, NOW, rawRepo, RULES } from "./helpers.js";
+import { DESC_OK, facts, fakeGraphql, fakeTracker, issue, NOW, RULES } from "./helpers.js";
 
 /** A throwaway copy of every file apply may touch. */
 function copyTree(): string {
@@ -31,16 +32,21 @@ const readme = (root = tmp) => readFileSync(join(root, "README.md"), "utf-8");
 const original = readme();
 const start = parseReadme(original, categories);
 
-// real rows to act on
-const repoRows = (slug: string) => start.sections.find((s) => s.slug === slug)!.rows.filter((r) => /^[\w.-]+\/[\w.-]+$/.test(pathOf(r.url)));
+// real rows to act on: independent projects (vendors never sink under the floor) without a stale note
+const repoRows = (slug: string) =>
+  start.sections.find((s) => s.slug === slug)!.rows.filter((r) => /^[\w.-]+\/[\w.-]+$/.test(pathOf(r.url)) && !isVendor(pathOf(r.url), rules) && !hasStaleNote(r.desc));
 const removePath = pathOf(repoRows("voice").at(-1)!.url);
-const [renameRow, englishRow, aliasRow] = repoRows("coding").filter((r) => !r.desc.includes("შენიშვნა:"));
+const [renameRow, englishRow, aliasRow, busyRow, quietRow] = repoRows("coding");
 const renamePath = pathOf(renameRow!.url);
 const renamedTo = `renamed-org/${renamePath.split("/")[1]}`;
 const englishPath = pathOf(englishRow!.url);
 const aliasPath = pathOf(aliasRow!.url);
 const aliasTarget = `moved-org/${aliasPath.split("/")[1]!.toLowerCase()}`;
+const busyPath = pathOf(busyRow!.url);
+const quietPath = pathOf(quietRow!.url);
+// what staleNote() derives from the last push the fake GitHub reports for the renamed repo
 const note = "შენიშვნა: 2025 წლის მაისის შემდეგ აღარ განახლებულა.";
+const quietSince = "2025-05-14T09:00:00Z";
 
 const owner = rules.repo.split("/")[0]!;
 const approved: string[] = [LABELS.proposal, LABELS.approved];
@@ -55,7 +61,13 @@ const tracker = fakeTracker(
     filed(13, { type: "remove", repo: removePath, reason: "below-floor", detail: "x" }),
     filed(14, { type: "rename", from: renamePath, to: renamedTo }),
     filed(15, { type: "note", repo: renamePath, note }), // still names the old path
-    filed(16, { type: "english", updates: [{ repo: englishPath, description: "Fresh English text" }] }),
+    filed(16, {
+      type: "english",
+      updates: [
+        { repo: englishPath, description: "Fresh English text" },
+        { repo: aliasPath, description: "Words GitHub never wrote" }, // not what GitHub says today
+      ],
+    }),
     filed(17, add("evil/repo", "Evil", "coding"), "mallory"),
     filed(18, { type: "describe", repo: englishPath, old: "stale text", new: DESC_OK, why: "x" }),
     filed(19, add("Wei-Shaw/sub2api", "Pool", "tokens")),
@@ -67,6 +79,15 @@ const tracker = fakeTracker(
     filed(25, add("acme/a-fork", "A Fork", "coding")),
     filed(26, add("acme/farmed", "Farmed", "coding")),
     filed(27, add("acme/sunk", "Sunk", "coding")),
+    filed(28, add("acme/edited", "Edited", "coding")), // edited after it was filed
+    // the summary the owner read names another repo than the data underneath
+    issue(29, { body: issueBody(add("acme/swapped", "Swapped", "coding"), categories).replace("https://github.com/acme/swapped · ⭐", "https://github.com/acme/innocent · ⭐"), labels: approved }),
+    filed(30, { type: "remove", repo: englishPath, reason: "archived", detail: "x" }), // GitHub says it is not archived
+    filed(31, { type: "note", repo: busyPath, note }), // pushed to this month
+    filed(32, add("acme/unanswered", "Unanswered", "coding")), // GitHub does not say whether it was edited
+    // quiet indeed, but the note is free text instead of the one its last push gives
+    filed(33, { type: "note", repo: quietPath, note: "შენიშვნა: აღარ ახლდება, ნახე evil.example." }),
+    filed(34, { type: "english", updates: [{ repo: aliasPath, description: "Words GitHub never wrote" }] }), // nothing left to write
   ],
   { approvedBy: { 22: "mallory", 23: null } },
 );
@@ -75,7 +96,12 @@ const live = new Map<string, RepoFacts>([
   ["acme/voice-kit", facts("acme/voice-kit", { stars: 15_000 })],
   ["acme/agent-kit", facts("acme/agent-kit", { stars: 7_500 })],
   ["wei-shaw/sub2api", facts("Wei-Shaw/sub2api")],
-  [renamePath.toLowerCase(), facts(renamedTo)],
+  [renamePath.toLowerCase(), facts(renamedTo, { pushedAt: quietSince })],
+  [renamedTo.toLowerCase(), facts(renamedTo, { pushedAt: quietSince })],
+  [removePath.toLowerCase(), facts(removePath, { stars: 2_000 })],
+  [englishPath.toLowerCase(), facts(englishPath, { description: "  Fresh English text " })],
+  [busyPath.toLowerCase(), facts(busyPath)],
+  [quietPath.toLowerCase(), facts(quietPath, { pushedAt: quietSince })],
   [aliasPath.toLowerCase(), facts(aliasTarget)],
   [aliasTarget, facts(aliasTarget)],
   ["acme/by-mallory", facts("acme/by-mallory")],
@@ -85,19 +111,7 @@ const live = new Map<string, RepoFacts>([
   ["acme/farmed", facts("acme/farmed", { stars: 9_000, forks: 10 })],
   ["acme/sunk", facts("acme/sunk", { stars: 2_500, forks: 300 })],
 ]);
-const gh = {
-  rest: tracker.client.rest,
-  async graphqlPartial(query: string) {
-    const data: Record<string, unknown> = {};
-    const errors: Array<{ type: string; message: string }> = [];
-    for (const m of query.matchAll(/(r\d+): repository\(owner: "([^"]+)", name: "([^"]+)"\)/g)) {
-      const f = live.get(`${m[2]}/${m[3]}`);
-      data[m[1]!] = f ? rawRepo(f) : null;
-      if (!f) errors.push({ type: "NOT_FOUND", message: "not found" });
-    }
-    return { data, errors };
-  },
-} as unknown as GitHub;
+const gh = { rest: tracker.client.rest, graphqlPartial: fakeGraphql(live, { edited: { 28: "2026-10-15T10:00:00Z" }, unanswered: [32] }) } as unknown as GitHub;
 const ctx: Ctx = { gh, rules, categories, root: tmp, llm: { apiKey: undefined, model: "m" }, now: NOW };
 
 const APPLIED = [14, 13, 15, 11, 12, 16];
@@ -110,7 +124,7 @@ test("a dry run reports the same outcome and writes nothing", async () => {
   assert.equal(readme(), original);
 });
 
-test("approved proposals land in a fixed order; untrusted, stale and excluded ones fail with a reason", async () => {
+test("approved proposals land in a fixed order; untrusted, edited, stale and excluded ones fail with a reason", async () => {
   const r = await runApply(ctx, { dryRun: false });
   assert.deepEqual(r.applied.map((a) => a.number), APPLIED);
   const why = Object.fromEntries(r.failed.map((f) => [f.number, f.error]));
@@ -125,7 +139,17 @@ test("approved proposals land in a fixed order; untrusted, stale and excluded on
   assert.equal(why[25], "a fork"); // the scan's gates again, on the day's numbers
   assert.match(why[26] ?? "", /star-farming signs/);
   assert.match(why[27] ?? "", /2500 stars, under the 3000 floor/);
-  assert.equal(r.failed.length, 11);
+  // what runs is exactly what the owner read: never an edited issue, never a summary that differs
+  assert.match(why[28] ?? "", /edited on 2026-10-15, and an edited proposal is never applied/);
+  assert.match(why[29] ?? "", /not what the agent files for this proposal/);
+  assert.match(why[32] ?? "", /whether the issue was edited could not be read/);
+  // a removal or a note is checked again on today's facts
+  assert.match(why[30] ?? "", /the reason \(archived\) no longer holds today/);
+  assert.match(why[31] ?? "", /not quiet any more/);
+  assert.match(why[33] ?? "", /the note is not the one the repo's last push gives/);
+  assert.match(why[34] ?? "", /GitHub says something else today for every one of these/);
+  assert.equal(r.failed.length, 18);
+  assert.match(r.applied.find((a) => a.number === 16)?.summary ?? "", /^1 ინგლისური აღწერა განახლდა; 1 გამოტოვდა/);
   assert.deepEqual(r.counts.after, { repos: r.counts.before.repos + 1, categories: r.counts.before.categories });
 
   const text = readme();
@@ -146,7 +170,9 @@ test("approved proposals land in a fixed order; untrusted, stale and excluded on
   assert.deepEqual(after, r.counts.after);
   assert.doesNotThrow(() => checkCounts(tmp, after)); // every count spot moved with it
   const cache = JSON.parse(readFileSync(join(tmp, "mcp/data/github-cache.json"), "utf-8")) as Record<string, { description: string; fetchedAt: string }>;
+  const cacheBefore = JSON.parse(readFileSync(resolve(REPO_ROOT, "mcp/data/github-cache.json"), "utf-8")) as typeof cache;
   assert.deepEqual(cache[englishPath], { description: "Fresh English text", fetchedAt: NOW.toISOString() });
+  assert.deepEqual(cache[aliasPath], cacheBefore[aliasPath]); // only GitHub's own words get in
   for (const f of ["README.md", "docs/index.html", "mcp/smithery.yaml", "mcp/data/github-cache.json"]) assert.ok(r.changedFiles.includes(f), f);
 
   await reportApply(ctx, r, { changeUrl: "https://github.com/owner/repo/commit/abc1234" });
@@ -159,21 +185,21 @@ test("approved proposals land in a fixed order; untrusted, stale and excluded on
 });
 
 test("when the checks fail after apply, nothing is closed and approvals turn into failures", async () => {
-  const t = fakeTracker(rules.repo, [filed(31, { type: "remove", repo: "x/y", reason: "other", detail: "x" })]);
+  const t = fakeTracker(rules.repo, [filed(61, { type: "remove", repo: "x/y", reason: "deleted", detail: "x" })]);
   const c: Ctx = { ...ctx, gh: { rest: t.client.rest } as unknown as GitHub };
-  await reportApply(c, { applied: [{ number: 31, title: "", summary: "s" }], failed: [], counts: { before: { repos: 1, categories: 1 }, after: { repos: 0, categories: 1 } }, changedFiles: [] }, { error: "verify: 2 problems" });
-  assert.deepEqual(t.labelsOf(31).sort(), [LABELS.failed, LABELS.proposal].sort());
-  assert.equal(t.issues.get(31)?.state, "open");
+  await reportApply(c, { applied: [{ number: 61, title: "", summary: "s" }], failed: [], counts: { before: { repos: 1, categories: 1 }, after: { repos: 0, categories: 1 } }, changedFiles: [] }, { error: "verify: 2 problems" });
+  assert.deepEqual(t.labelsOf(61).sort(), [LABELS.failed, LABELS.proposal].sort());
+  assert.equal(t.issues.get(61)?.state, "open");
   assert.ok(t.comments[0]?.body.includes("verify: 2 problems"));
 });
 
 test("one issue that cannot be told does not stop the others, but the report still fails", async () => {
-  const t = fakeTracker(rules.repo, [filed(41, { type: "remove", repo: "x/y", reason: "other", detail: "x" })]);
+  const t = fakeTracker(rules.repo, [filed(71, { type: "remove", repo: "x/y", reason: "deleted", detail: "x" })]);
   const c: Ctx = { ...ctx, gh: { rest: t.client.rest } as unknown as GitHub };
   const counts = { before: { repos: 1, categories: 1 }, after: { repos: 1, categories: 1 } };
-  const result = { applied: [], failed: [{ number: 999, title: "", error: "x" }, { number: 41, title: "", error: "y" }], counts, changedFiles: [] };
+  const result = { applied: [], failed: [{ number: 999, title: "", error: "x" }, { number: 71, title: "", error: "y" }], counts, changedFiles: [] };
   await assert.rejects(reportApply(c, result, {}), /1 issue\(s\) could not be updated: #999/);
-  assert.deepEqual(t.labelsOf(41).sort(), [LABELS.failed, LABELS.proposal].sort());
+  assert.deepEqual(t.labelsOf(71).sort(), [LABELS.failed, LABELS.proposal].sort());
 });
 
 test("a run that stops writes nothing and tells every issue it was working on", async () => {
@@ -194,6 +220,7 @@ test("a run that stops writes nothing and tells every issue it was working on", 
   assert.match(drift.error ?? "", /site\/index\.html: says \d+ repos/);
   assert.deepEqual(drift.applied, []);
   assert.deepEqual(drift.changedFiles, []);
+  assert.deepEqual(drift.counts.after, drift.counts.before); // the removal made in memory is not reported as done
   const why = Object.fromEntries(drift.failed.map((f) => [f.number, f.error]));
   assert.match(why[51] ?? "", /^the run stopped and nothing was pushed: /);
   assert.match(why[52] ?? "", /description changed/); // its own reason is kept

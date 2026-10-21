@@ -5,11 +5,12 @@ import type { RepoFacts } from "../src/facts.js";
 import { GitHubError, type RestClient } from "../src/github.js";
 import { LABELS } from "../src/proposals.js";
 import { TABLE_HEAD, TABLE_RULE } from "../src/readme.js";
+import { DAY_MS } from "../src/rules.js";
 
 export const NOW = new Date("2026-10-21T12:00:00Z");
 
 /** NOW minus n days, as GitHub writes dates. */
-export const daysAgo = (n: number): string => new Date(NOW.getTime() - n * 86_400_000).toISOString();
+export const daysAgo = (n: number): string => new Date(NOW.getTime() - n * DAY_MS).toISOString();
 
 /**
  * The rules as they stood when these tests were written. Tests read numbers
@@ -75,7 +76,6 @@ export const DESC_OK =
 export function facts(path: string, over: Partial<RepoFacts> = {}): RepoFacts {
   return {
     nameWithOwner: path,
-    url: `https://github.com/${path}`,
     isArchived: false,
     isFork: false,
     isDisabled: false,
@@ -98,7 +98,6 @@ export function facts(path: string, over: Partial<RepoFacts> = {}): RepoFacts {
 export function rawRepo(f: RepoFacts): Record<string, unknown> {
   return {
     nameWithOwner: f.nameWithOwner,
-    url: f.url,
     isArchived: f.isArchived,
     isFork: f.isFork,
     isDisabled: f.isDisabled,
@@ -113,6 +112,26 @@ export function rawRepo(f: RepoFacts): Record<string, unknown> {
     primaryLanguage: f.language ? { name: f.language } : null,
     repositoryTopics: { nodes: f.topics.map((name) => ({ topic: { name } })) },
     defaultBranchRef: { target: { history: { totalCount: f.commits } } },
+  };
+}
+
+/**
+ * GitHub's GraphQL, as fetchFacts() and lastEdits() ask it: repos come from `live`
+ * (a missing one is deleted); issues were never edited unless `edited` dates them,
+ * and GitHub gives no answer at all for the `unanswered` ones.
+ */
+export function fakeGraphql(live: Map<string, RepoFacts>, issues: { edited?: Record<number, string>; unanswered?: number[] } = {}) {
+  return async (query: string) => {
+    const data: Record<string, unknown> = {};
+    const errors: Array<{ type: string; message: string }> = [];
+    for (const m of query.matchAll(/(r\d+): repository\(owner: "([^"]+)", name: "([^"]+)"\)/g)) {
+      const f = live.get(`${m[2]}/${m[3]}`);
+      data[m[1]!] = f ? rawRepo(f) : null;
+      if (!f) errors.push({ type: "NOT_FOUND", message: "not found" });
+    }
+    const asked = [...query.matchAll(/(i\d+): issue\(number: (\d+)\)/g)].filter((m) => !issues.unanswered?.includes(Number(m[2])));
+    if (asked.length > 0) data["repository"] = Object.fromEntries(asked.map((m) => [m[1]!, { lastEditedAt: issues.edited?.[Number(m[2])] ?? null }]));
+    return { data, errors };
   };
 }
 

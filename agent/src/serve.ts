@@ -1,5 +1,5 @@
 /** Entry point of the gateway container, bundled to dist/gateway.js (see tsup.config.ts and the Dockerfile). */
-import { startGateway } from "./gateway-main.js";
+import { startGateway } from "./start.js";
 import { log } from "./log.js";
 
 try {

@@ -2,7 +2,7 @@
  * One-line JSON logs on stderr, so workflow logs and the gateway's platform
  * logs stay greppable. Never pass secrets in `fields`.
  */
-type Level = "debug" | "info" | "warn" | "error";
+type Level = "info" | "warn" | "error";
 
 const quiet = process.env["AGENT_LOG_LEVEL"] === "warn";
 
@@ -11,15 +11,13 @@ function write(
   msg: string,
   fields: Record<string, unknown> = {},
 ): void {
-  if (quiet && (level === "debug" || level === "info")) return;
+  if (quiet && level === "info") return;
   process.stderr.write(
     `${JSON.stringify({ t: new Date().toISOString(), level, msg, ...fields })}\n`,
   );
 }
 
 export const log = {
-  debug: (msg: string, fields?: Record<string, unknown>) =>
-    write("debug", msg, fields),
   info: (msg: string, fields?: Record<string, unknown>) =>
     write("info", msg, fields),
   warn: (msg: string, fields?: Record<string, unknown>) =>

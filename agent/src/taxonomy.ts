@@ -1,7 +1,8 @@
 /**
  * What belongs in each category, in the words the blind placement review used
- * (it agreed with the human placement on 393 of 404 repos). The model sees
- * these when it picks a category; keep them in step with the README intros.
+ * (when it ran on 2026-10-20, it agreed with the human placement on all but a
+ * handful of repos). The model sees these when it picks a category; keep them
+ * in step with the README intros.
  */
 export const CATEGORY_RULES: Record<string, string> = {
   coding:

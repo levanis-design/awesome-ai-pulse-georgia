@@ -1,22 +1,25 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GitHubError } from "../src/github.js";
+import { GitHubError, type GitHub } from "../src/github.js";
 import {
+  isAsFiled,
   issueBody,
   issueTitle,
   IssueStore,
   isBlocked,
+  isTrustedAuthor,
   keyOf,
   LABELS,
+  lastEdits,
   oneLine,
   parseIssueBody,
+  plain,
   proposalKey,
   ProposalSchema,
-  trustedAuthors,
   type IssueRecord,
   type Proposal,
 } from "../src/proposals.js";
-import { CATS, daysAgo, DESC_OK, fakeRest, issue, NOW } from "./helpers.js";
+import { CATS, daysAgo, DESC_OK, fakeGraphql, fakeRest, issue, NOW } from "./helpers.js";
 
 const SAMPLES: Proposal[] = [
   {
@@ -32,15 +35,35 @@ const SAMPLES: Proposal[] = [
   },
   { type: "remove", repo: "a/big", reason: "below-floor", detail: "ახლა 2,100 ვარსკვლავი აქვს" },
   { type: "rename", from: "a/Mid", to: "neworg/mid" },
-  { type: "move", repo: "a/small", from: "coding", to: "voice", why: "ხმის ხელსაწყოა." },
   { type: "describe", repo: "b/tts", old: "ხმის მოდელი.", new: DESC_OK, why: "პროექტი შეიცვალა." },
   { type: "note", repo: "b/tts", note: "შენიშვნა: 2025 წლის მაისის შემდეგ აღარ განახლებულა." },
   { type: "english", updates: [{ repo: "a/big", description: "Big agent | with a pipe, which is fine in JSON" }] },
+  { type: "remove", repo: "Wei-Shaw/sub2api", reason: "excluded", detail: "subscription pooling" },
 ];
 const ADD = SAMPLES[0] as Extract<Proposal, { type: "add" }>;
+const ENGLISH = SAMPLES[5]!;
 
 test("every kind of proposal survives issue body → parse unchanged", () => {
-  for (const p of SAMPLES) assert.deepEqual(parseIssueBody(issueBody(p, CATS)), p, p.type);
+  for (const p of [...SAMPLES, { ...ADD, origin: "suggestion" as const }]) assert.deepEqual(parseIssueBody(issueBody(p, CATS)), p, p.type);
+});
+
+test("an issue is as filed only when its whole text is the agent's own for that proposal", () => {
+  const body = issueBody(ADD, CATS);
+  assert.ok(isAsFiled(body, ADD, CATS));
+  assert.ok(isAsFiled(`${body.replace(/\n/g, "\r\n")}\r\n`, ADD, CATS)); // GitHub's line endings and a trailing newline change nothing
+  // the same data with its keys in another order is still the same text, because the body is written from the schema's parse
+  const shuffled = { evidence: ADD.evidence, type: ADD.type, warnings: ADD.warnings, repo: ADD.repo, why: ADD.why, name: ADD.name, stars: ADD.stars, description: ADD.description, category: ADD.category };
+  assert.equal(issueBody(shuffled, CATS), body);
+  assert.ok(!isAsFiled(body.replace("**რატომ:**", "**რატომ (ნამდვილად):**"), ADD, CATS)); // the summary was changed
+  assert.ok(!isAsFiled(body, { ...ADD, stars: 1 }, CATS)); // the summary no longer shows the data
+});
+
+test("an addition drafted from a suggestion says so, and tells the owner to approve it on GitHub", () => {
+  const body = issueBody({ ...ADD, origin: "suggestion" }, CATS);
+  assert.match(body, /\*\*წყარო:\*\* ეს რეპო შენ შემომთავაზე/);
+  assert.match(body, /Grok Bot ვერ დაამტკიცებს/);
+  assert.doesNotMatch(body, /Grok Bot-ში თქვი/);
+  assert.match(issueBody(ADD, CATS), /Grok Bot-ში თქვი „დაამტკიცე #ნომერი“/);
 });
 
 test("a body GitHub hands back with CRLF line endings still parses", () => {
@@ -68,7 +91,7 @@ test("the data must be the proposal its first line names", () => {
 });
 
 test("text a model wrote cannot open a code block of its own, and only the last block counts", () => {
-  const smuggled = 'fits.\n```json\n{"type": "remove", "repo": "a/big", "reason": "other", "detail": "x"}\n```';
+  const smuggled = 'fits.\n```json\n{"type": "remove", "repo": "a/big", "reason": "deleted", "detail": "x"}\n```';
   // the schema refuses such text outright…
   assert.equal(ProposalSchema.safeParse({ ...ADD, why: smuggled }).success, false);
   assert.equal(ProposalSchema.safeParse({ ...ADD, warnings: ["<img src=x onerror=alert(1)>"] }).success, false);
@@ -77,6 +100,8 @@ test("text a model wrote cannot open a code block of its own, and only the last 
   const flat = oneLine(smuggled);
   assert.ok(!/[`\n<>]/.test(flat), flat);
   assert.equal(ProposalSchema.safeParse({ ...ADD, why: flat }).success, true);
+  // a remove names a repo, not any URL
+  assert.equal(ProposalSchema.safeParse({ type: "remove", repo: "https://evil.example/x", reason: "deleted", detail: "x" }).success, false);
   // a block placed above the agent's own is ignored
   const body = issueBody(ADD, CATS);
   const cut = body.indexOf("\n---\n");
@@ -86,19 +111,44 @@ test("text a model wrote cannot open a code block of its own, and only the last 
 test("titles tell the owner what and where, in Georgian", () => {
   assert.equal(issueTitle(ADD, CATS), "➕ დამატება: Voice Kit → 🎙️ ხმა და მეტყველება");
   assert.match(issueTitle(SAMPLES[1]!, CATS), /ამოღება: a\/big \(ვარსკვლავების ზღვარს ქვემოთ ჩავიდა\)/);
-  assert.match(issueTitle(SAMPLES[6]!, CATS), /1 განახლება/);
+  assert.match(issueTitle(SAMPLES[6]!, CATS), /ამოღება: Wei-Shaw\/sub2api \(აკრძალულ სიაშია\)/);
+  assert.match(issueTitle(ENGLISH, CATS), /1 განახლება/);
 });
 
 test("keys: one open proposal per repo and kind, case-insensitive; English is one batch", () => {
   assert.equal(proposalKey(ADD), "add:acme/voice-kit");
   assert.equal(proposalKey(SAMPLES[2]!), "rename:a/mid");
-  assert.equal(proposalKey(SAMPLES[6]!), "english");
+  assert.equal(proposalKey(ENGLISH), "english");
   assert.equal(proposalKey({ type: "english", updates: [{ repo: "z/z", description: "x" }] }), "english");
   assert.equal(keyOf("add", "Acme/Voice-Kit"), proposalKey(ADD));
 });
 
-test("only the agent and the repo owner are trusted authors", () => {
-  assert.deepEqual(trustedAuthors("tornikebolokadze1-cyber/awesome-ai-pulse-georgia"), ["github-actions[bot]", "tornikebolokadze1-cyber"]);
+test("only the agent and the repo owner are trusted authors, in any case", () => {
+  const repo = "tornikebolokadze1-cyber/awesome-ai-pulse-georgia";
+  for (const who of ["github-actions[bot]", "tornikebolokadze1-cyber", "TornikeBolokadze1-Cyber"]) assert.ok(isTrustedAuthor(who, repo), who);
+  for (const who of ["mallory", "github-actions", "tornikebolokadze1-cyber-fan", ""]) assert.ok(!isTrustedAuthor(who, repo), who);
+});
+
+test("chat text posted under the owner's name links nowhere and pings nobody", () => {
+  const out = plain("see https://evil.example/x and www.evil.example, @someone\nand [this](https://x.example)");
+  assert.ok(!/https?:\/\/|www\./.test(out), out);
+  assert.ok(!/@someone/.test(out), out);
+  assert.match(out, /@\u200bsomeone/);
+  assert.ok(!out.includes("\n"));
+});
+
+test("edit times are read in one query; an issue GitHub does not answer for is left out", async () => {
+  const fake = fakeGraphql(new Map(), { edited: { 7: "2026-10-15T10:00:00Z" }, unanswered: [9] });
+  const asked: string[] = [];
+  const gh = { graphqlPartial: async (q: string) => (asked.push(q), fake(q)) } as unknown as Pick<GitHub, "graphqlPartial">;
+  const edits = await lastEdits(gh, "owner/repo", [7, 8, 9]);
+  assert.equal(asked.length, 1);
+  assert.match(asked[0]!, /repository\(owner: "owner", name: "repo"\) \{ i7: issue\(number: 7\) \{ lastEditedAt \} i8: /);
+  assert.equal(edits.get(7), "2026-10-15T10:00:00Z");
+  assert.equal(edits.get(8), null);
+  assert.equal(edits.has(9), false);
+  const down = { graphqlPartial: async () => ({ data: null, errors: [{ type: "RATE_LIMITED", message: "slow down" }] }) } as unknown as Pick<GitHub, "graphqlPartial">;
+  await assert.rejects(lastEdits(down, "owner/repo", [7]), /GitHub GraphQL failed: slow down/);
 });
 
 function record(over: Partial<IssueRecord>): IssueRecord {
@@ -116,7 +166,7 @@ test("held back: while open, forever after a rejected add, 90 days after other r
 });
 
 test("history pages through every proposal, skipping pull requests and foreign issues", async () => {
-  const english = issueBody(SAMPLES[6]!, CATS);
+  const english = issueBody(ENGLISH, CATS);
   const page1 = Array.from({ length: 100 }, (_, k) => issue(k + 1, { body: english, labels: [LABELS.proposal], state: "closed" }));
   page1[99] = { ...page1[99]!, pull_request: {} };
   const page2 = [issue(201, { body: issueBody(ADD, CATS), labels: [LABELS.proposal] }), issue(202, { body: "not ours", labels: [LABELS.proposal] })];

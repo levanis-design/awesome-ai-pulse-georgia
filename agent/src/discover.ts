@@ -6,6 +6,7 @@
 import type { Rules } from "./config.js";
 import type { GitHub } from "./github.js";
 import { log } from "./log.js";
+import { DAY_MS } from "./rules.js";
 
 export type SourceReport = {
   source: string;
@@ -18,11 +19,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
 /** Search queries for this run: new repos by topic and keyword, plus older big misses still being pushed. */
-export function searchQueries(rules: Rules, now = new Date()): string[] {
+export function searchQueries(rules: Rules, now: Date): string[] {
   const t = rules.thresholds;
-  const since = day(
-    new Date(now.getTime() - t.discoverWindowDays * 86_400_000),
-  );
+  const since = day(new Date(now.getTime() - t.discoverWindowDays * DAY_MS));
   const fresh = `created:>=${since} stars:>=${t.minStarsNew} archived:false fork:false`;
   const old = `stars:>=${t.minStarsOld} pushed:>=${since} archived:false fork:false`;
   return [
@@ -35,7 +34,7 @@ export function searchQueries(rules: Rules, now = new Date()): string[] {
 export async function searchCandidates(
   gh: GitHub,
   rules: Rules,
-  now = new Date(),
+  now: Date,
 ): Promise<{ repos: Set<string>; report: SourceReport }> {
   const repos = new Set<string>();
   const queries = searchQueries(rules, now);

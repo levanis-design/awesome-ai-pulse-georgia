@@ -5,7 +5,8 @@
  */
 import { z } from "zod";
 import type { CategoryMeta } from "./config.js";
-import { GitHubError, type RestClient } from "./github.js";
+import { GitHubError, type GitHub, type RestClient } from "./github.js";
+import { DAY_MS, ownerOf } from "./rules.js";
 
 const repoPath = z.string().regex(/^[\w.-]+\/[\w.-]+$/);
 
@@ -25,27 +26,40 @@ export function oneLine(text: string, max = 300): string {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
+/**
+ * Chat text the gateway posts on a public issue under the owner's name: one line,
+ * links taken out, and @-mentions broken with a zero-width space so nobody is pinged.
+ */
+export function plain(text: string, max = 300): string {
+  return oneLine(text.replace(/\b(?:https?:\/\/|www\.)\S+/gi, "‹link›").replace(/@(?=[\w-])/g, "@\u200b"), max);
+}
+
+// Description lengths: wider than descriptionProblems() allows (DESC_MIN–DESC_MAX in llm.ts) on
+// purpose. The schema only has to keep an issue readable; the format check is the gate.
+const description = z.string().min(80).max(1500);
+
 export const ProposalSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("add"),
     repo: repoPath,
     name: line(80).refine((s) => s.length > 0 && !/[[\]|]/.test(s), "a display name the README link can hold"),
     category: z.string(),
-    description: z.string().min(80).max(1500),
+    description,
     stars: z.number().int().nonnegative(),
     why: line(300),
     warnings: z.array(line(300)).max(12),
     evidence: z.record(z.union([z.string(), z.number(), z.null()])),
+    /** drafted from an owner's suggestion issue: approved only on GitHub, never from the chat */
+    origin: z.literal("suggestion").optional(),
   }),
   z.object({
     type: z.literal("remove"),
-    repo: z.string().min(3),
-    reason: z.enum(["deleted", "archived", "disabled", "below-floor", "other"]),
+    repo: repoPath,
+    reason: z.enum(["deleted", "archived", "disabled", "below-floor", "excluded"]),
     detail: line(300),
   }),
   z.object({ type: z.literal("rename"), from: repoPath, to: repoPath }),
-  z.object({ type: z.literal("move"), repo: repoPath, from: z.string(), to: z.string(), why: line(300) }),
-  z.object({ type: z.literal("describe"), repo: repoPath, old: z.string(), new: z.string().min(80).max(1500), why: line(300) }),
+  z.object({ type: z.literal("describe"), repo: repoPath, old: z.string(), new: description, why: line(300) }),
   z.object({ type: z.literal("note"), repo: repoPath, note: line(300).refine((s) => s.length >= 10) }),
   z.object({
     type: z.literal("english"),
@@ -55,6 +69,8 @@ export const ProposalSchema = z.discriminatedUnion("type", [
 
 export type Proposal = z.infer<typeof ProposalSchema>;
 export type ProposalType = Proposal["type"];
+export type AddProposal = Extract<Proposal, { type: "add" }>;
+export type RemoveReason = Extract<Proposal, { type: "remove" }>["reason"];
 
 export const LABELS = {
   proposal: "agent:proposal",
@@ -85,8 +101,9 @@ export const ISSUE_BODY_MAX = 60_000;
  * Issues may be opened by anyone on a public repo, so only proposals the agent
  * filed (github-actions[bot]) or the repo owner wrote are ever approved or applied.
  */
-export function trustedAuthors(repo: string): string[] {
-  return ["github-actions[bot]", repo.split("/")[0] ?? ""];
+export function isTrustedAuthor(login: string, repo: string): boolean {
+  const who = login.toLowerCase();
+  return who === "github-actions[bot]" || who === ownerOf(repo).toLowerCase();
 }
 
 /**
@@ -108,12 +125,12 @@ export function proposalKey(p: Proposal): string {
   }
 }
 
-const REMOVE_REASON: Record<string, string> = {
+const REMOVE_REASON: Record<RemoveReason, string> = {
   deleted: "წაშლილია",
   archived: "დაარქივდა",
   disabled: "გათიშულია",
   "below-floor": "ვარსკვლავების ზღვარს ქვემოთ ჩავიდა",
-  other: "სხვა მიზეზი",
+  excluded: "აკრძალულ სიაშია",
 };
 
 function cat(categories: CategoryMeta[], slug: string): string {
@@ -129,8 +146,6 @@ export function issueTitle(p: Proposal, categories: CategoryMeta[]): string {
       return `➖ ამოღება: ${p.repo} (${REMOVE_REASON[p.reason]})`;
     case "rename":
       return `✏️ ახალი მისამართი: ${p.from} → ${p.to}`;
-    case "move":
-      return `↔️ გადატანა: ${p.repo} → ${cat(categories, p.to)}`;
     case "describe":
       return `📝 აღწერის განახლება: ${p.repo}`;
     case "note":
@@ -146,6 +161,7 @@ function summary(p: Proposal, categories: CategoryMeta[]): string[] {
       return [
         `**რეპო:** https://github.com/${p.repo} · ⭐ ${p.stars.toLocaleString("en-US")}`,
         `**კატეგორია:** ${cat(categories, p.category)}`,
+        ...(p.origin === "suggestion" ? [`**წყარო:** ეს რეპო შენ შემომთავაზე (\`${LABELS.suggestion}\`).`] : []),
         `**რატომ:** ${oneLine(p.why)}`,
         "",
         "**აღწერა, რომელიც სიაში ჩაიწერება:**",
@@ -154,11 +170,9 @@ function summary(p: Proposal, categories: CategoryMeta[]): string[] {
         ...(p.warnings.length > 0 ? ["", "**⚠️ შენიშვნები შემოწმებიდან:**", ...p.warnings.map((w) => `- ${oneLine(w)}`)] : []),
       ];
     case "remove":
-      return [`**რეპო:** ${p.repo.includes("://") ? p.repo : `https://github.com/${p.repo}`}`, `**მიზეზი:** ${REMOVE_REASON[p.reason]} — ${oneLine(p.detail)}`];
+      return [`**რეპო:** https://github.com/${p.repo}`, `**მიზეზი:** ${REMOVE_REASON[p.reason]} — ${oneLine(p.detail)}`];
     case "rename":
       return [`GitHub-მა რეპო ახალ მისამართზე გადაიტანა. სიაში ბმული შეიცვლება, ადგილი და აღწერა იგივე დარჩება.`, `**ძველი:** https://github.com/${p.from}`, `**ახალი:** https://github.com/${p.to}`];
-    case "move":
-      return [`**რეპო:** https://github.com/${p.repo}`, `**საიდან:** ${cat(categories, p.from)}`, `**სად:** ${cat(categories, p.to)}`, `**რატომ:** ${oneLine(p.why)}`];
     case "describe":
       return [`**რეპო:** https://github.com/${p.repo}`, `**რატომ:** ${oneLine(p.why)}`, "", "**ახლანდელი:**", "", `> ${p.old}`, "", "**ახალი:**", "", `> ${p.new}`];
     case "note":
@@ -168,22 +182,36 @@ function summary(p: Proposal, categories: CategoryMeta[]): string[] {
   }
 }
 
+/**
+ * The one text the agent files for a proposal. The JSON is the schema's own parse,
+ * so its keys always come in the same order: apply compares an issue with this
+ * text and refuses one that differs, since the owner approved what it shows.
+ */
 export function issueBody(p: Proposal, categories: CategoryMeta[]): string {
+  const approve =
+    p.type === "add" && p.origin === "suggestion"
+      ? `დასამტკიცებლად აქ დაამატე ლეიბლი \`${LABELS.approved}\` — შეთავაზებიდან მოსულ დამატებას Grok Bot ვერ დაამტკიცებს.`
+      : `დასამტკიცებლად: Grok Bot-ში თქვი „დაამტკიცე #ნომერი“, ან აქ დაამატე ლეიბლი \`${LABELS.approved}\`.`;
   return [
     `<!-- aipulse-agent:proposal v1 key=${proposalKey(p)} -->`,
     ...summary(p, categories),
     "",
     "---",
-    `დასამტკიცებლად: Grok Bot-ში თქვი „დაამტკიცე #ნომერი“, ან აქ დაამატე ლეიბლი \`${LABELS.approved}\`. უარისთვის — \`${LABELS.rejected}\` (და დახურე).`,
+    `${approve} უარისთვის — \`${LABELS.rejected}\` (და დახურე).`,
     "",
     "<details><summary>მონაცემები აგენტისთვის (JSON)</summary>",
     "",
     "```json",
-    JSON.stringify(p, null, 2),
+    JSON.stringify(ProposalSchema.parse(p), null, 2),
     "```",
     "",
     "</details>",
   ].join("\n");
+}
+
+/** Is this issue text exactly what the agent files for its proposal? GitHub may hand it back with CRLF. */
+export function isAsFiled(body: string, p: Proposal, categories: CategoryMeta[]): boolean {
+  return body.replace(/\r\n/g, "\n").trimEnd() === issueBody(p, categories).trimEnd();
 }
 
 /**
@@ -254,15 +282,36 @@ function toRecord(i: RawIssue): IssueRecord {
  * yes forever for a rejected addition; yes for 90 days after any other rejection.
  * Applied proposals never block (if the condition comes back, it is news).
  */
-export function isBlocked(p: { type: ProposalType }, history: IssueRecord[], now = new Date()): boolean {
+export function isBlocked(p: { type: ProposalType }, history: IssueRecord[], now: Date): boolean {
   for (const i of history) {
     if (i.state === "open") return true;
     if (!i.labels.includes(LABELS.rejected)) continue;
     if (p.type === "add") return true;
     const closed = i.closedAt ? new Date(i.closedAt).getTime() : 0;
-    if (now.getTime() - closed < 90 * 86_400_000) return true;
+    if (now.getTime() - closed < 90 * DAY_MS) return true;
   }
   return false;
+}
+
+/**
+ * When each issue's text was last edited (null: never), read through GraphQL in
+ * batches. An issue GitHub does not answer for is left out, so the caller refuses it.
+ */
+export async function lastEdits(gh: Pick<GitHub, "graphqlPartial">, repo: string, numbers: number[]): Promise<Map<number, string | null>> {
+  const [owner, name] = repo.split("/");
+  const out = new Map<number, string | null>();
+  for (let i = 0; i < numbers.length; i += 50) {
+    const fields = numbers.slice(i, i + 50).map((n) => `i${n}: issue(number: ${n}) { lastEditedAt }`);
+    type Answer = { repository: Record<string, { lastEditedAt: string | null } | null> | null };
+    const { data, errors } = await gh.graphqlPartial<Answer>(`query { repository(owner: "${owner}", name: "${name}") { ${fields.join(" ")} } }`);
+    const hard = errors.filter((e) => e.type !== "NOT_FOUND");
+    if (data === null || hard.length > 0) throw new Error(`GitHub GraphQL failed: ${hard.map((e) => e.message).join("; ") || "no data returned"}`);
+    for (const n of numbers.slice(i, i + 50)) {
+      const issue = data.repository?.[`i${n}`];
+      if (issue) out.set(n, issue.lastEditedAt);
+    }
+  }
+  return out;
 }
 
 export class IssueStore {

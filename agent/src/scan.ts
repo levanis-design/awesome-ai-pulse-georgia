@@ -12,9 +12,9 @@ import type { GitHub } from "./github.js";
 import { descriptionProblems, draftEntry, factCheck, NoLlmError, reviewEntry, reviseEntry, type LlmConfig } from "./llm.js";
 import { log } from "./log.js";
 import { judgedRecently, remember, type Memory } from "./memory.js";
-import { ENGLISH_MAX, ISSUE_BODY_MAX, IssueStore, isBlocked, issueBody, keyOf, LABELS, oneLine, proposalKey, ProposalSchema, type IssueRecord, type Proposal, type ProposalType } from "./proposals.js";
+import { ENGLISH_MAX, ISSUE_BODY_MAX, IssueStore, isBlocked, issueBody, keyOf, LABELS, oneLine, proposalKey, ProposalSchema, type AddProposal, type IssueRecord, type Proposal, type ProposalType } from "./proposals.js";
 import { allPaths, getRow, parseReadme, type ReadmeDoc } from "./readme.js";
-import { addBlocker, aiSignal, belowFloor, clearsStarBar, hasStaleNote, isStale, ownerOf, staleNote } from "./rules.js";
+import { addBlocker, aiSignal, belowFloor, clearsStarBar, hasStaleNote, isNewRepo, isStale, listedExclusion, ownerOf, staleNote } from "./rules.js";
 
 export type Ctx = {
   gh: GitHub;
@@ -43,9 +43,13 @@ export function loadDoc(ctx: Ctx): ReadmeDoc {
   return parseReadme(readFileSync(resolve(ctx.root, "README.md"), "utf-8"), ctx.categories);
 }
 
-function loadEnglishCache(root: string): Record<string, { description: string | null }> {
+/** The English descriptions the MCP data and the site show, as last taken from GitHub. */
+export const CACHE_FILE = "mcp/data/github-cache.json";
+export type EnglishCache = Record<string, { description: string | null; fetchedAt: string }>;
+
+export function loadEnglishCache(root: string): EnglishCache {
   try {
-    return JSON.parse(readFileSync(resolve(root, "mcp", "data", "github-cache.json"), "utf-8"));
+    return JSON.parse(readFileSync(resolve(root, CACHE_FILE), "utf-8")) as EnglishCache;
   } catch (err) {
     // no cache yet means every description is new; a broken one must not read as "all new"
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return {};
@@ -69,12 +73,18 @@ export async function listedNames(gh: GitHub, doc: ReadmeDoc, known?: Map<string
   return names;
 }
 
-/** Health of what is already listed: gone, archived, moved, sunk under the floor, gone quiet. */
+/** Health of what is already listed: excluded by the owner, gone, archived, moved, sunk under the floor, gone quiet. */
 export function healthProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, RepoFacts | null>): Proposal[] {
   const out: Proposal[] = [];
   for (const path of allPaths(doc).filter((p) => REPO_PATH.test(p))) {
     const f = facts.get(path.toLowerCase());
     if (f === undefined) continue;
+    // a repo the owner put on the exclusion list after it was listed leaves the list too
+    const excluded = listedExclusion(path, f, ctx.rules);
+    if (excluded) {
+      out.push({ type: "remove", repo: path, reason: "excluded", detail: oneLine(excluded) });
+      continue;
+    }
     if (f === null) {
       out.push({ type: "remove", repo: path, reason: "deleted", detail: "GitHub ამ მისამართზე რეპოს ვეღარ პოულობს" });
       continue;
@@ -110,7 +120,7 @@ export function englishProposal(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, Rep
   for (const path of allPaths(doc).filter((p) => REPO_PATH.test(p))) {
     const f = facts.get(path.toLowerCase());
     const fresh = f?.description?.trim();
-    if (!f || !fresh || fresh.length > ENGLISH_MAX) continue;
+    if (!f || !fresh || fresh.length > ENGLISH_MAX || /[\r\n]/.test(fresh)) continue;
     if ((cache[path]?.description ?? "").trim() !== fresh) updates.push({ repo: path, description: fresh });
   }
   if (updates.length === 0) return null;
@@ -128,7 +138,7 @@ function styleExamples(doc: ReadmeDoc): string[] {
 }
 
 /** `retry`: worth asking again tomorrow (a formatting slip), unlike a verdict on the repo itself. */
-export type Evaluation = { proposal: Proposal } | { skip: string; retry?: boolean };
+export type Evaluation = { proposal: AddProposal } | { skip: string; retry?: boolean };
 
 /** Turn one unlisted repo into an `add` proposal, or say why not. */
 export async function evaluateRepo(
@@ -144,7 +154,7 @@ export async function evaluateRepo(
   const slugs = ctx.categories.map((c) => c.slug);
   const draft = await draftEntry(ctx.llm, { facts: f, readme, slugs, examples: styleExamples(doc), ...(opts.ownerNote ? { ownerNote: opts.ownerNote } : {}) });
   if (!draft.relevant) return { skip: `not a fit for the collection: ${oneLine(String(draft.why), 200)}` };
-  if (!slugs.includes(draft.category)) return { skip: `model picked unknown category '${draft.category}'` };
+  if (!slugs.includes(draft.category)) return { skip: `model picked unknown category '${oneLine(String(draft.category), 60)}'` };
   let description = draft.description.trim();
   const warnings: string[] = [];
   let check = await factCheck(ctx.llm, { facts: f, readme, description });
@@ -180,25 +190,45 @@ export type Blocked = (p: { type: ProposalType }, key: string) => boolean;
 /**
  * A changed GitHub description hints that the project changed, so those repos
  * get their Georgian entry re-read, a few per day, each at most once a month.
+ * One review that fails costs only itself: the others are still filed, and only
+ * a real verdict is remembered, so a failed or malformed answer is asked again tomorrow.
  */
-async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, RepoFacts | null>, english: Proposal | null, memory: Memory, blocked: Blocked): Promise<Proposal[]> {
-  if (!english || english.type !== "english") return [];
+export async function reviewProposals(
+  ctx: Ctx,
+  doc: ReadmeDoc,
+  facts: Map<string, RepoFacts | null>,
+  english: Proposal | null,
+  memory: Memory,
+  blocked: Blocked,
+): Promise<{ proposals: Proposal[]; notes: string[] }> {
+  const out: { proposals: Proposal[]; notes: string[] } = { proposals: [], notes: [] };
+  if (!english || english.type !== "english") return out;
   const changed = english.updates
     .map((u) => ({ u, f: facts.get(u.repo.toLowerCase()) }))
     .filter((x): x is { u: { repo: string; description: string }; f: RepoFacts } => !!x.f)
     .filter(({ u, f }) => !judgedRecently(memory, `review:${u.repo}`, f.stars, ctx.now) && !blocked({ type: "describe" }, keyOf("describe", u.repo)))
     .sort((a, b) => b.f.stars - a.f.stars)
     .slice(0, ctx.rules.thresholds.maxDescriptionReviewsPerScan);
-  const out: Proposal[] = [];
   for (const { u, f } of changed) {
     const row = getRow(doc, u.repo);
     if (!row) continue;
-    const review = await reviewEntry(ctx.llm, { facts: f, readme: await ctx.gh.readme(f.nameWithOwner), current: row.desc });
-    remember(memory, `review:${u.repo}`, review.stillAccurate ? "still accurate" : "new description proposed", f.stars, ctx.now);
-    if (review.stillAccurate || !review.description) continue;
-    const next = review.description.trim();
-    if (descriptionProblems(next).length > 0) continue;
-    out.push({ type: "describe", repo: u.repo, old: row.desc, new: next, why: oneLine(String(review.why)) });
+    try {
+      const review = await reviewEntry(ctx.llm, { facts: f, readme: await ctx.gh.readme(f.nameWithOwner), current: row.desc });
+      if (review.stillAccurate) {
+        remember(memory, `review:${u.repo}`, "still accurate", f.stars, ctx.now);
+        continue;
+      }
+      const next = typeof review.description === "string" ? review.description.trim() : "";
+      const shape = descriptionProblems(next);
+      if (shape.length > 0) {
+        out.notes.push(`review of ${u.repo}: the new description failed the format check (${shape.join("; ")}), asked again tomorrow`);
+        continue;
+      }
+      remember(memory, `review:${u.repo}`, "new description proposed", f.stars, ctx.now);
+      out.proposals.push({ type: "describe", repo: u.repo, old: row.desc, new: next, why: oneLine(String(review.why)) });
+    } catch (err) {
+      out.notes.push(`review of ${u.repo} failed: ${oneLine((err as Error).message, 160)}`);
+    }
   }
   return out;
 }
@@ -210,8 +240,8 @@ export const NO_AI_SIGNAL = "no AI signal in its name, description or topics";
  * the point of a daily scan), then older big misses; most stars first in each.
  */
 export function rankCandidates(ctx: Ctx, pool: RepoFacts[]): RepoFacts[] {
-  const isNew = (f: RepoFacts) => (ctx.now.getTime() - new Date(f.createdAt).getTime()) / 86_400_000 <= ctx.rules.thresholds.discoverWindowDays;
-  return pool.filter((f) => clearsStarBar(f, ctx.rules, ctx.now)).sort((a, b) => Number(isNew(b)) - Number(isNew(a)) || b.stars - a.stars);
+  const isNew = (f: RepoFacts) => Number(isNewRepo(f, ctx.rules, ctx.now));
+  return pool.filter((f) => clearsStarBar(f, ctx.rules, ctx.now)).sort((a, b) => isNew(b) - isNew(a) || b.stars - a.stars);
 }
 
 export type CandidateRun = Pick<ScanReport, "proposals" | "skipped" | "held"> & { drafted: number };
@@ -256,7 +286,7 @@ export async function considerCandidates(ctx: Ctx, doc: ReadmeDoc, ranked: RepoF
       }
     } catch (err) {
       if (err instanceof NoLlmError) break;
-      run.skipped.push({ repo: path, why: `evaluation failed: ${(err as Error).message.slice(0, 160)}` });
+      run.skipped.push({ repo: path, why: `evaluation failed: ${oneLine((err as Error).message, 160)}` });
     }
   }
   return run;
@@ -276,7 +306,7 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
     if (!opts.dryRun) throw err;
     // a dry run may go on without it, but says so: what it shows may already be open or rejected
     history = new Map();
-    report.notes.push(`dry run without the proposal history (${(err as Error).message.slice(0, 120)}): some of these may already be proposed or rejected`);
+    report.notes.push(`dry run without the proposal history (${oneLine((err as Error).message, 120)}): some of these may already be proposed or rejected`);
   }
   const blocked: Blocked = (p, key) => isBlocked(p, history.get(key) ?? [], ctx.now);
   const doc = loadDoc(ctx);
@@ -292,11 +322,9 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
   const llmReady = !!ctx.llm.apiKey;
   if (!llmReady) report.notes.push("ANTHROPIC_API_KEY is not set: new repos and description reviews were not drafted.");
   if (llmReady) {
-    try {
-      proposals.push(...(await reviewProposals(ctx, doc, facts, english, memory, blocked)));
-    } catch (err) {
-      report.notes.push(`description review stopped: ${(err as Error).message}`);
-    }
+    const reviews = await reviewProposals(ctx, doc, facts, english, memory, blocked);
+    proposals.push(...reviews.proposals);
+    report.notes.push(...reviews.notes);
   }
 
   if (opts.discover) {
@@ -332,13 +360,13 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
   return report;
 }
 
-/** An owner's suggestion issue → a proposal (or a reasoned no), answered on the issue. */
 /** Discovery found nothing because every source broke, not because nothing is new. */
 export function discoveryBroken(r: ScanReport): boolean {
   const discovery = r.sources.filter((s) => s.source !== "listed-repos");
   return discovery.length > 0 && discovery.every((s) => !s.ok);
 }
 
+/** An owner's suggestion issue → a proposal (or a reasoned no), answered on the issue. */
 export async function runSuggestion(ctx: Ctx, number: number, dryRun: boolean): Promise<{ outcome: string; proposal?: Proposal }> {
   const store = new IssueStore(ctx.gh, ctx.rules.repo);
   const issue = await store.get(number);
@@ -383,10 +411,12 @@ export async function runSuggestion(ctx: Ctx, number: number, dryRun: boolean): 
     await reply(`ეს რეპო ახლა არ შევთავაზე. მიზეზი: ${ev.skip}`);
     return { outcome: ev.skip };
   }
+  // a suggestion may have come through the chat, so what it leads to is approved on GitHub only
+  const proposal: AddProposal = { ...ev.proposal, origin: "suggestion" };
   if (!dryRun) {
     await store.ensureLabels();
-    const filed = await store.create(ev.proposal, ctx.categories);
-    await reply(`შეთავაზება მზადაა: #${filed.number}. დაამტკიცე Grok Bot-ში ან ლეიბლით \`${LABELS.approved}\`.`);
+    const filed = await store.create(proposal, ctx.categories);
+    await reply(`შეთავაზება მზადაა: #${filed.number}. დასამტკიცებლად იმ Issue-ს GitHub-ზე დაამატე ლეიბლი \`${LABELS.approved}\` — შეთავაზებიდან მოსულ დამატებას Grok Bot ვერ დაამტკიცებს.`);
   }
-  return { outcome: "proposed", proposal: ev.proposal };
+  return { outcome: "proposed", proposal };
 }

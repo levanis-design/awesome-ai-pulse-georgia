@@ -1,17 +1,16 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { after, test } from "node:test";
-import { loadCategories, loadRules, REPO_ROOT } from "../src/config.js";
-import { allPaths, parseReadme } from "../src/readme.js";
-import { addBlocker, aiSignal, belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isStale, isVendor, staleNote } from "../src/rules.js";
+import { loadRules } from "../src/config.js";
+import { addBlocker, aiSignal, belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isNewRepo, isStale, isVendor, listedExclusion, staleNote } from "../src/rules.js";
 import { daysAgo, facts, NOW, RULES as rules } from "./helpers.js";
 
-test("the owner's own rules.json loads, and nothing listed in the README is on its exclusion list", () => {
-  const real = loadRules();
-  const doc = parseReadme(readFileSync(resolve(REPO_ROOT, "README.md"), "utf-8"), loadCategories());
-  assert.deepEqual(allPaths(doc).filter((p) => exclusionReason(p, real) !== null), []);
+// The owner's real rules are loaded only here. A listed repo the owner later excludes is
+// proposed for removal by the scan, so no test holds the README against the real list.
+test("the owner's own rules.json loads", () => {
+  assert.doesNotThrow(() => loadRules());
 });
 
 test("a rules file with a pattern that does not compile is refused when it is loaded", () => {
@@ -28,6 +27,13 @@ test("the owner's standing exclusions are refused, by exact path in any case", (
   for (const path of ["p-e-w/heretic", "tornikebolokadze1-cyber/claude-code-setup", "erekle1/georgian-payments-skills", "louislva/claude-peers-mcp", "anywhere-labs/dsh-desktop"]) {
     assert.ok(exclusionReason(path, rules), path);
   }
+});
+
+test("a listed repo is excluded by its README address or by the name GitHub now gives it", () => {
+  assert.equal(listedExclusion("Wei-Shaw/sub2api", null, rules), "subscription pooling");
+  assert.equal(listedExclusion("old/address", facts("Wei-Shaw/sub2api"), rules), "subscription pooling");
+  assert.equal(listedExclusion("old/address", facts("fine/repo"), rules), null);
+  assert.equal(listedExclusion("old/address", null, rules), null);
 });
 
 test("name patterns catch new repos of an excluded kind, and nothing else", () => {
@@ -72,6 +78,8 @@ test("star-farming signs: tiny fork ratio or almost no commits", () => {
 });
 
 test("the star bar depends on age: 5K inside 60 days, 20K after", () => {
+  assert.ok(isNewRepo(facts("a/x", { createdAt: daysAgo(60) }), rules, NOW));
+  assert.ok(!isNewRepo(facts("a/x", { createdAt: daysAgo(61) }), rules, NOW));
   assert.ok(clearsStarBar(facts("a/x", { createdAt: daysAgo(30), stars: 5_000 }), rules, NOW));
   assert.ok(!clearsStarBar(facts("a/x", { createdAt: daysAgo(30), stars: 4_999 }), rules, NOW));
   assert.ok(!clearsStarBar(facts("a/x", { createdAt: daysAgo(300), stars: 19_999 }), rules, NOW));

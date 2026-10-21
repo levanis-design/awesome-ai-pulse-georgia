@@ -8,7 +8,6 @@ import {
   addRow,
   getRow,
   kfmt,
-  moveRow,
   parseReadme,
   removeRow,
   renameRow,
@@ -88,13 +87,11 @@ test("a row that would break the table is refused", () => {
   assert.throws(() => addRow(doc, "nope", { name: "P", url: "https://github.com/p/p", stars: "1K", desc: "ok." }), /unknown category/);
 });
 
-test("move keeps the row and re-sorts it by stars; rename keeps place and stars", () => {
+test("rename keeps place, name and stars; remove takes the row out", () => {
   const doc = parseReadme(mini, cats);
-  moveRow(doc, "a/big", "voice");
-  assert.deepEqual(doc.sections[1]!.rows.map((r) => r.name), ["Big", "Tts"]);
   renameRow(doc, "a/mid", "neworg/mid");
-  assert.equal(doc.sections[0]!.rows[0]!.url, "https://github.com/neworg/mid");
-  assert.equal(doc.sections[0]!.rows[0]!.stars, "12K");
+  assert.deepEqual(doc.sections[0]!.rows[1], { name: "Mid", url: "https://github.com/neworg/mid", stars: "12K", desc: "საშუალო აგენტი." });
+  assert.throws(() => renameRow(doc, "a/big", "neworg/mid"), /already listed/);
   assert.equal(removeRow(doc, "a/small").name, "Small");
   assert.equal(getRow(doc, "a/small"), undefined);
   assert.deepEqual(totals(doc), { repos: 3, categories: 2 });

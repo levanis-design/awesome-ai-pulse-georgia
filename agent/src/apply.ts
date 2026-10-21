@@ -8,10 +8,10 @@ import { resolve } from "node:path";
 import { readBadgeCounts, updateCounts, type Counts } from "./counts.js";
 import { fetchFacts } from "./facts.js";
 import { descriptionProblems } from "./llm.js";
-import { IssueStore, LABELS, trustedAuthors, type IssueRecord, type Proposal, type ProposalType } from "./proposals.js";
-import { addRow, getRow, kfmt, moveRow, removeRow, renameRow, serializeReadme, setDescription, totals, type ReadmeDoc } from "./readme.js";
-import { addBlocker, exclusionReason, hasStaleNote, ownerOf } from "./rules.js";
-import { listedNames, loadDoc, type Ctx } from "./scan.js";
+import { isAsFiled, IssueStore, isTrustedAuthor, LABELS, lastEdits, type AddProposal, type IssueRecord, type Proposal, type ProposalType, type RemoveReason } from "./proposals.js";
+import { addRow, getRow, kfmt, removeRow, renameRow, serializeReadme, setDescription, totals, type ReadmeDoc } from "./readme.js";
+import { addBlocker, belowFloor, exclusionReason, hasStaleNote, isStale, listedExclusion, ownerOf, staleNote } from "./rules.js";
+import { CACHE_FILE, listedNames, loadDoc, loadEnglishCache, type Ctx, type EnglishCache } from "./scan.js";
 
 export type ApplyItem = { number: number; title: string; summary: string };
 export type ApplyResult = {
@@ -24,24 +24,20 @@ export type ApplyResult = {
 };
 
 /** Renames first, so later proposals of the same run may still name the old address. */
-const ORDER: Record<ProposalType, number> = { rename: 0, remove: 1, move: 2, describe: 3, note: 4, add: 5, english: 6 };
-
-const CACHE_FILE = "mcp/data/github-cache.json";
-
-type Cache = Record<string, { description: string | null; fetchedAt: string }>;
+const ORDER: Record<ProposalType, number> = { rename: 0, remove: 1, describe: 2, note: 3, add: 4, english: 5 };
 
 /** What one run works on, shared by all of its proposals. */
 type Run = {
   ctx: Ctx;
   doc: ReadmeDoc;
-  cache: Cache;
+  cache: EnglishCache;
   /** old path (lower-case) → new path, for renames applied earlier in the same run */
   moved: Map<string, string>;
   /** listed repos by README path and by current GitHub name; read once, by the first addition */
   listed: () => Promise<Map<string, string>>;
 };
 
-async function applyAdd(run: Run, p: Extract<Proposal, { type: "add" }>): Promise<string> {
+async function applyAdd(run: Run, p: AddProposal): Promise<string> {
   const { ctx, doc } = run;
   const excluded = exclusionReason(p.repo, ctx.rules);
   if (excluded) throw new Error(`on the exclusion list: ${excluded}`);
@@ -58,6 +54,23 @@ async function applyAdd(run: Run, p: Extract<Proposal, { type: "add" }>): Promis
   return `დაემატა ${p.name} (${kfmt(f.stars)})`;
 }
 
+/** Does the reason a repo was proposed for removal still hold, on today's facts? */
+async function removalHolds(ctx: Ctx, path: string, reason: RemoveReason): Promise<boolean> {
+  const f = (await fetchFacts(ctx.gh, [path])).get(path.toLowerCase()) ?? null;
+  switch (reason) {
+    case "deleted":
+      return f === null;
+    case "archived":
+      return f?.isArchived === true;
+    case "disabled":
+      return f?.isDisabled === true;
+    case "below-floor":
+      return f !== null && belowFloor(f.nameWithOwner, f, ctx.rules);
+    case "excluded":
+      return listedExclusion(path, f, ctx.rules) !== null;
+  }
+}
+
 async function applyOne(run: Run, p: Proposal): Promise<string> {
   const { ctx, doc, cache, moved } = run;
   const currentPath = (path: string) => moved.get(path.toLowerCase()) ?? path;
@@ -65,7 +78,10 @@ async function applyOne(run: Run, p: Proposal): Promise<string> {
     case "add":
       return applyAdd(run, p);
     case "remove": {
-      const row = removeRow(doc, currentPath(p.repo));
+      const path = currentPath(p.repo);
+      // a repo that came back since the scan stays listed
+      if (!(await removalHolds(ctx, path, p.reason))) throw new Error(`the reason (${p.reason}) no longer holds today`);
+      const row = removeRow(doc, path);
       return `ამოღებულია ${row.name}`;
     }
     case "rename": {
@@ -74,10 +90,6 @@ async function applyOne(run: Run, p: Proposal): Promise<string> {
       renameRow(doc, p.from, f.nameWithOwner);
       moved.set(p.from.toLowerCase(), f.nameWithOwner);
       return `ბმული შეიცვალა: ${f.nameWithOwner}`;
-    }
-    case "move": {
-      const row = moveRow(doc, currentPath(p.repo), p.to);
-      return `${row.name} გადავიდა ${p.to}-ში`;
     }
     case "describe": {
       const row = getRow(doc, currentPath(p.repo));
@@ -89,34 +101,53 @@ async function applyOne(run: Run, p: Proposal): Promise<string> {
       return `აღწერა განახლდა: ${row.name}`;
     }
     case "note": {
-      const row = getRow(doc, currentPath(p.repo));
+      const path = currentPath(p.repo);
+      const row = getRow(doc, path);
       if (!row) throw new Error("not listed any more");
       if (hasStaleNote(row.desc)) return `${row.name}-ს შენიშვნა უკვე აქვს`;
-      setDescription(doc, currentPath(p.repo), `${row.desc} ${p.note}`);
+      // only the note today's facts give, never free text carried in an issue
+      const f = (await fetchFacts(ctx.gh, [path])).get(path.toLowerCase());
+      if (!f || !isStale(f, ctx.rules, ctx.now)) throw new Error("not quiet any more: pushed to, archived or deleted since");
+      if (p.note !== staleNote(f.pushedAt)) throw new Error("the note is not the one the repo's last push gives");
+      setDescription(doc, path, `${row.desc} ${p.note}`);
       return `შენიშვნა დაემატა: ${row.name}`;
     }
     case "english": {
+      const paths = p.updates.map((u) => currentPath(u.repo));
+      const live = await fetchFacts(ctx.gh, paths);
       let n = 0;
-      for (const u of p.updates) {
-        const path = currentPath(u.repo);
-        if (!getRow(doc, path)) continue;
+      p.updates.forEach((u, k) => {
+        const path = paths[k]!;
+        // only GitHub's own text as it reads today, so an issue cannot put words in a repo's mouth
+        if (!getRow(doc, path) || live.get(path.toLowerCase())?.description?.trim() !== u.description) return;
         cache[path] = { description: u.description, fetchedAt: ctx.now.toISOString() };
         n++;
-      }
-      return `${n} ინგლისური აღწერა განახლდა`;
+      });
+      // nothing left to write is not an applied change: no commit is made for it
+      if (n === 0) throw new Error("GitHub says something else today for every one of these, or they are not listed any more; the next scan proposes fresh texts");
+      const skipped = p.updates.length - n;
+      return `${n} ინგლისური აღწერა განახლდა${skipped ? `; ${skipped} გამოტოვდა, რადგან GitHub-ზე ტექსტი მას შემდეგ შეიცვალა ან რეპო სიაში აღარაა` : ""}`;
     }
   }
 }
 
+const AFRESH = "close it, and the scan or a new suggestion proposes it afresh";
+
 /** Why an approved issue may not run, or null when it may. */
-async function refusal(i: IssueRecord, store: IssueStore, trusted: Set<string>, owner: string): Promise<string | null> {
+async function refusal(ctx: Ctx, i: IssueRecord, store: IssueStore, edits: Map<number, string | null> | Error): Promise<string | null> {
   if (!i.proposal) return "no readable proposal in the issue";
-  if (!trusted.has(i.author.toLowerCase())) return `filed by ${i.author}, not by the agent or the owner`;
+  if (!isTrustedAuthor(i.author, ctx.rules.repo)) return `filed by ${i.author}, not by the agent or the owner`;
   if (i.labels.includes(LABELS.rejected)) return `it also carries ${LABELS.rejected}`;
+  // the owner approved what the issue shows, so it must still be exactly what the agent filed
+  if (!isAsFiled(i.body, i.proposal, ctx.categories)) return `the issue text is not what the agent files for this proposal; ${AFRESH}`;
+  if (edits instanceof Error) return `whether the issue was edited could not be read: ${edits.message}`;
+  if (!edits.has(i.number)) return "whether the issue was edited could not be read";
+  const edited = edits.get(i.number);
+  if (edited) return `the issue was edited on ${edited.slice(0, 10)}, and an edited proposal is never applied; ${AFRESH}`;
   // the label IS the approval, so the owner's own account must have added it
   try {
     const by = await store.approvedBy(i.number);
-    return by?.toLowerCase() === owner ? null : `approved by ${by ?? "nobody"}, not by the owner`;
+    return by?.toLowerCase() === ownerOf(ctx.rules.repo).toLowerCase() ? null : `approved by ${by ?? "nobody"}, not by the owner`;
   } catch (err) {
     return `who approved it could not be read: ${(err as Error).message}`;
   }
@@ -126,20 +157,19 @@ async function refusal(i: IssueRecord, store: IssueStore, trusted: Set<string>, 
 async function applyAll(ctx: Ctx, runnable: IssueRecord[], result: ApplyResult, dryRun: boolean): Promise<void> {
   const doc = loadDoc(ctx);
   const before = totals(doc);
+  result.counts = { before, after: before };
   const badge = readBadgeCounts(readFileSync(resolve(ctx.root, "README.md"), "utf-8"));
   if (badge.repos !== before.repos || badge.categories !== before.categories) {
     throw new Error(`README rows (${before.repos}/${before.categories}) and badges (${badge.repos}/${badge.categories}) disagree — fix that first`);
   }
-  result.counts = { before, after: before };
-  const cache = JSON.parse(readFileSync(resolve(ctx.root, CACHE_FILE), "utf-8")) as Cache;
+  const cache = loadEnglishCache(ctx.root);
+  const cacheBefore = JSON.stringify(cache);
   let listed: Promise<Map<string, string>> | undefined;
   const run: Run = { ctx, doc, cache, moved: new Map(), listed: () => (listed ??= listedNames(ctx.gh, doc)) };
 
-  let cacheTouched = false;
   for (const issue of [...runnable].sort((a, b) => ORDER[a.proposal!.type] - ORDER[b.proposal!.type] || a.number - b.number)) {
     try {
       const summary = await applyOne(run, issue.proposal!);
-      if (issue.proposal!.type === "english") cacheTouched = true;
       result.applied.push({ number: issue.number, title: issue.title, summary });
     } catch (err) {
       result.failed.push({ number: issue.number, title: issue.title, error: (err as Error).message });
@@ -154,40 +184,38 @@ async function applyAll(ctx: Ctx, runnable: IssueRecord[], result: ApplyResult, 
   if (after.repos !== before.repos || after.categories !== before.categories) {
     for (const [f, text] of updateCounts(ctx.root, before, after, { write: false, seed: files })) files.set(f, text);
   }
-  if (cacheTouched) files.set(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`);
+  if (JSON.stringify(cache) !== cacheBefore) files.set(CACHE_FILE, `${JSON.stringify(cache, null, 2)}\n`);
   for (const [f, text] of files) writeFileSync(resolve(ctx.root, f), text, "utf-8");
   result.changedFiles = [...files.keys()];
 }
 
 export async function runApply(ctx: Ctx, opts: { dryRun: boolean; numbers?: number[] }): Promise<ApplyResult> {
   const store = new IssueStore(ctx.gh, ctx.rules.repo);
-  const trusted = new Set(trustedAuthors(ctx.rules.repo).map((a) => a.toLowerCase()));
-  const owner = ownerOf(ctx.rules.repo).toLowerCase();
   let queue: IssueRecord[] = await store.list({ label: LABELS.approved, state: "open" });
   if (opts.numbers?.length) queue = queue.filter((i) => opts.numbers!.includes(i.number));
+  const edits = await lastEdits(ctx.gh, ctx.rules.repo, queue.map((i) => i.number)).catch((err: unknown) => err as Error);
   const zero = { repos: 0, categories: 0 };
   const result: ApplyResult = { applied: [], failed: [], counts: { before: zero, after: zero }, changedFiles: [] };
 
   const runnable: IssueRecord[] = [];
   for (const i of queue) {
-    const why = await refusal(i, store, trusted, owner);
+    const why = await refusal(ctx, i, store, edits);
     if (why) result.failed.push({ number: i.number, title: i.title, error: why });
     else runnable.push(i);
   }
 
   try {
     await applyAll(ctx, runnable, result, opts.dryRun);
+    return result;
   } catch (err) {
     // the run itself stopped (README and badges disagree, a count spot drifted, a file would not
-    // write): nothing is pushed, and every issue it was working on is told why
+    // write): nothing is pushed, every issue it was working on is told why, and no half-applied
+    // field of the result survives
     const error = (err as Error).message;
     const told = new Set(result.failed.map((f) => f.number));
-    result.error = error;
-    result.applied = [];
-    result.changedFiles = [];
-    for (const i of runnable) if (!told.has(i.number)) result.failed.push({ number: i.number, title: i.title, error: `the run stopped and nothing was pushed: ${error}` });
+    const stopped = runnable.filter((i) => !told.has(i.number)).map((i) => ({ number: i.number, title: i.title, error: `the run stopped and nothing was pushed: ${error}` }));
+    return { applied: [], failed: [...result.failed, ...stopped], counts: { before: result.counts.before, after: result.counts.before }, changedFiles: [], error };
   }
-  return result;
 }
 
 /**
