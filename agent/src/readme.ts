@@ -34,11 +34,16 @@ export function starValue(cell: string): number {
   return Math.round(Number(m[1]) * mult);
 }
 
-/** The star-cell format the weekly refresh also writes: 195K / 5.1K / 393. */
+/**
+ * The star cell exactly as the weekly refresh writes it (fmtStars in
+ * mcp/scripts/refresh-stars.ts): 393 / 5.1K / 195K / 1.2M. Any other rounding
+ * would make the two writers flip the same cell back and forth.
+ */
 export function kfmt(n: number): string {
-  if (n >= 10_000) return `${Math.round(n / 1000)}K`;
-  if (n >= 1_000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
+  if (n < 1000) return String(n);
+  if (n < 10_000) return `${(Math.round(n / 100) / 10).toFixed(1)}K`;
+  if (n < 1_000_000) return `${Math.round(n / 1000)}K`;
+  return `${(Math.round(n / 100_000) / 10).toFixed(1)}M`;
 }
 
 export function parseRow(line: string): Row {
@@ -65,7 +70,7 @@ export function validateRow(r: Row): string[] {
   }
   if (r.name.includes("]") || r.name.includes("[")) errs.push("name: brackets break the link");
   if (/\s/.test(r.url) || r.url.includes(")")) errs.push("url: spaces or ')' break the link");
-  if (!/^(\d+(\.\d)?K|\d+|Guide|Gist)$/.test(r.stars)) errs.push(`stars: '${r.stars}' is not a star cell`);
+  if (!/^(\d+(\.\d)?[KM]|\d+|Guide|Gist)$/.test(r.stars)) errs.push(`stars: '${r.stars}' is not a star cell`);
   if (!/[.!?)»“"]$/.test(r.desc)) errs.push("desc: does not end a sentence");
   return errs;
 }
@@ -112,11 +117,17 @@ export function serializeReadme(doc: ReadmeDoc): string {
     const s = byStart.get(i);
     if (s) {
       out.push(...s.rows.map(formatRow));
-      i = s.end - 1;
-      continue;
+      // skip the rows the file had; a table that had none owns no lines, so line i is kept
+      if (s.end > s.start) {
+        i = s.end - 1;
+        continue;
+      }
     }
     out.push(doc.lines[i]!);
   }
+  // a table that ends the file starts after its last line
+  const last = byStart.get(doc.lines.length);
+  if (last) out.push(...last.rows.map(formatRow));
   return out.join(doc.eol);
 }
 

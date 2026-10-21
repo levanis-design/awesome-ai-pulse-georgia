@@ -11,9 +11,17 @@ const here = dirname(fileURLToPath(import.meta.url));
 /** agent/src → repository root. */
 export const REPO_ROOT = resolve(here, "..", "..");
 
+function compiles(pattern: string): boolean {
+  try {
+    new RegExp(pattern, "i");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const RulesSchema = z.object({
   repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-  branch: z.string().min(1),
   thresholds: z.object({
     minStarsNew: z.number().int().positive(),
     minStarsOld: z.number().int().positive(),
@@ -29,9 +37,11 @@ const RulesSchema = z.object({
   vendorOwners: z.array(z.string()),
   discoverTopics: z.array(z.string()),
   discoverKeywords: z.array(z.string()),
+  bigMissTopics: z.array(z.string()),
   exclude: z.object({
     repos: z.record(z.string()),
-    namePatterns: z.array(z.object({ pattern: z.string(), reason: z.string() })),
+    // a pattern that does not compile would otherwise stop the scan halfway through
+    namePatterns: z.array(z.object({ pattern: z.string().refine(compiles, "not a valid regular expression"), reason: z.string() })),
   }),
 });
 
@@ -48,7 +58,7 @@ export function loadRules(path = resolve(REPO_ROOT, "agent", "config", "rules.js
 
 export type CategoryMeta = { slug: string; emoji: string; georgian: string; english: string };
 
-/** The 21 categories as the last data build saw them (mcp/data/repos.json). */
+/** The categories as the last data build saw them (mcp/data/repos.json). */
 export function loadCategories(root = REPO_ROOT): CategoryMeta[] {
   const data = JSON.parse(readFileSync(resolve(root, "mcp", "data", "repos.json"), "utf-8")) as {
     categories: CategoryMeta[];

@@ -40,13 +40,20 @@ export class CountsError extends Error {
   override name = "CountsError";
 }
 
+export type UpdateOptions = {
+  /** write the files (default) or only return their new contents */
+  write?: boolean;
+  /** contents to start from instead of the file on disk, e.g. a README that is not written yet */
+  seed?: ReadonlyMap<string, string>;
+};
+
 /**
  * Rewrite every count spot from `from` to `to` and bump the README badge
  * cache-buster. Returns the new file contents; writes them unless `write` is false.
  * Nothing is written when any spot is missing or already disagrees with `from`.
  */
-export function updateCounts(root: string, from: Counts, to: Counts, write = true): Map<string, string> {
-  const files = new Map<string, string>();
+export function updateCounts(root: string, from: Counts, to: Counts, opts: UpdateOptions = {}): Map<string, string> {
+  const files = new Map<string, string>(opts.seed ?? []);
   const read = (f: string) => files.get(f) ?? readFileSync(resolve(root, f), "utf-8");
   const problems: string[] = [];
   for (const spot of SPOTS) {
@@ -77,8 +84,13 @@ export function updateCounts(root: string, from: Counts, to: Counts, write = tru
     "README.md",
     read("README.md").replace(/(repos-\d+-00D0FF\?[^"]*?v=)(\d+)/, (_w, pre: string, v: string) => `${pre}${Number(v) + 1}`),
   );
-  if (write) for (const [f, text] of files) writeFileSync(resolve(root, f), text, "utf-8");
+  if (opts.write ?? true) for (const [f, text] of files) writeFileSync(resolve(root, f), text, "utf-8");
   return files;
+}
+
+/** Throws a CountsError naming every spot that is missing or does not say `counts`; writes nothing. */
+export function checkCounts(root: string, counts: Counts): void {
+  updateCounts(root, counts, counts, { write: false });
 }
 
 /** Read the current counts straight from the README badges. */

@@ -1,21 +1,21 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import { loadRules } from "../src/config.js";
+import { parseTrending } from "../src/discover.js";
 import type { RepoFacts } from "../src/facts.js";
 import { GitHub } from "../src/github.js";
+import { remember, type Memory } from "../src/memory.js";
 import { ISSUE_BODY_MAX, issueBody } from "../src/proposals.js";
 import { parseReadme } from "../src/readme.js";
 import { staleNote } from "../src/rules.js";
-import { considerCandidates, englishProposal, healthProposals, NO_AI_SIGNAL, rankCandidates, type Ctx } from "../src/scan.js";
-import { remember, type Memory } from "../src/memory.js";
-import { CATS, DESC_OK, facts, miniReadme, NOW } from "./helpers.js";
+import { considerCandidates, discoveryBroken, englishProposal, healthProposals, listedNames, NO_AI_SIGNAL, rankCandidates, type Ctx, type ScanReport } from "../src/scan.js";
+import { CATS, daysAgo, DESC_OK, facts, miniReadme, NOW, RULES } from "./helpers.js";
 
 const root = mkdtempSync(join(tmpdir(), "aipulse-scan-"));
 after(() => rmSync(root, { recursive: true, force: true }));
-const ctx: Ctx = { gh: new GitHub(undefined), rules: loadRules(), categories: CATS, root, llm: { apiKey: undefined, model: "m" }, now: NOW };
+const ctx: Ctx = { gh: new GitHub(undefined), rules: RULES, categories: CATS, root, llm: { apiKey: undefined, model: "m" }, now: NOW };
 
 const doc = parseReadme(
   miniReadme(
@@ -58,6 +58,18 @@ test("health: gone, archived, moved, sunk under the floor and gone quiet each be
   ]);
 });
 
+test("a listed repo is known by its README address and by the name GitHub now gives it", async () => {
+  const live = new Map<string, RepoFacts | null>([
+    ["a/moved", facts("neworg/Moved")],
+    ["a/gone", null],
+  ]);
+  const names = await listedNames(ctx.gh, doc, live);
+  assert.equal(names.get("neworg/moved"), "a/moved");
+  assert.equal(names.get("a/moved"), "a/moved");
+  assert.equal(names.get("a/gone"), "a/gone");
+  assert.equal(names.has("a/guide/blob/main/x.md"), false); // not a repo row
+});
+
 test("English descriptions follow GitHub, but hand-written ones for empty GitHub text stay", () => {
   mkdirSync(join(root, "mcp", "data"), { recursive: true });
   writeFileSync(
@@ -86,6 +98,15 @@ test("English descriptions follow GitHub, but hand-written ones for empty GitHub
   });
 });
 
+test("a damaged description cache stops the scan instead of reading as all-new", () => {
+  const broken = mkdtempSync(join(tmpdir(), "aipulse-cache-"));
+  after(() => rmSync(broken, { recursive: true, force: true }));
+  mkdirSync(join(broken, "mcp", "data"), { recursive: true });
+  writeFileSync(join(broken, "mcp", "data", "github-cache.json"), "{ half a file");
+  const live = new Map<string, RepoFacts | null>([["a/moved", facts("a/moved", { description: "New text" })]]);
+  assert.throws(() => englishProposal({ ...ctx, root: broken }, doc, live), SyntaxError);
+});
+
 test("a big English batch is cut to what one GitHub issue can hold", () => {
   const rows = Array.from({ length: 300 }, (_, i) => `| [R${i}](https://github.com/o/r${i}) | 5K | აღწერა ${i}. |`);
   const big = parseReadme(miniReadme(rows, ["| [Tts](https://github.com/b/tts) | 30K | ხმის მოდელი. |"]), CATS);
@@ -98,7 +119,6 @@ test("a big English batch is cut to what one GitHub issue can hold", () => {
 });
 
 test("new repos are considered before older big misses; anything under its bar is dropped", () => {
-  const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
   const pool = [
     facts("old/huge", { createdAt: daysAgo(700), stars: 90_000 }),
     facts("new/viral", { createdAt: daysAgo(10), stars: 6_000 }),
@@ -110,11 +130,13 @@ test("new repos are considered before older big misses; anything under its bar i
 });
 
 test("everything decidable for free is decided before a model is asked, and verdicts are remembered", async (t) => {
-  const aiDesc = { description: "An agent framework for LLM apps.", topics: ["llm"], createdAt: new Date(NOW.getTime() - 10 * 86_400_000).toISOString() };
+  const aiDesc = { description: "An agent framework for LLM apps.", topics: ["llm"], createdAt: daysAgo(10) };
   const ranked = [
-    facts("facebook/react", { description: "The library for web and native user interfaces.", topics: ["javascript"] }),
+    facts("facebook/react", { description: "The library for web and native user interfaces.", topics: ["javascript"], stars: 240_000, forks: 50_000 }),
     facts("Wei-Shaw/sub2api", aiDesc),
     facts("farm/stars", { ...aiDesc, stars: 9_000, forks: 10 }),
+    facts("old/archived", { ...aiDesc, isArchived: true }),
+    facts("some/fork", { ...aiDesc, isFork: true }),
     facts("held/open", aiDesc),
     facts("judged/before", { ...aiDesc, stars: 10_000 }),
     facts("good/one", aiDesc),
@@ -122,7 +144,7 @@ test("everything decidable for free is decided before a model is asked, and verd
     facts("good/three", aiDesc),
   ];
   const memory: Memory = {};
-  remember(memory, "judged/before", "not a fit for the collection: a course platform", 9_000, new Date(NOW.getTime() - 5 * 86_400_000));
+  remember(memory, "judged/before", "not a fit for the collection: a course platform", 9_000, new Date(daysAgo(5)));
   const blocked = (_p: { type: string }, key: string) => key === "add:held/open";
   const asked: string[] = [];
   const f = t.mock.method(globalThis, "fetch", async (_url: unknown, init: RequestInit) => {
@@ -144,6 +166,8 @@ test("everything decidable for free is decided before a model is asked, and verd
   assert.equal(why["facebook/react"], NO_AI_SIGNAL);
   assert.match(why["Wei-Shaw/sub2api"] ?? "", /subscription pooling/);
   assert.match(why["farm/stars"] ?? "", /forks\/stars/);
+  assert.equal(why["old/archived"], "archived or disabled"); // free, so it costs none of the budget
+  assert.equal(why["some/fork"], "a fork");
   assert.match(why["judged/before"] ?? "", /^judged 2026-10-16: not a fit/);
   assert.match(why["good/two"] ?? "", /not a fit/);
   assert.equal(why["good/three"], undefined); // budget spent: left for tomorrow, not judged
@@ -152,4 +176,20 @@ test("everything decidable for free is decided before a model is asked, and verd
   assert.equal(f.mock.callCount(), 3); // good/one: draft + fact check; good/two: draft only
   assert.match(memory["good/two"]?.verdict ?? "", /not a fit/);
   assert.equal(memory["good/one"], undefined); // a proposal is tracked by its issue, not here
+});
+
+test("a scan whose every discovery source broke says so, instead of reporting nothing new", () => {
+  const report = (sources: ScanReport["sources"]): ScanReport => ({ started: NOW.toISOString(), listed: 3, sources, proposals: [], filed: [], held: [], skipped: [], notes: [] });
+  const listed = { source: "listed-repos", ok: true, found: 3 };
+  const search = { source: "github-search", ok: true, found: 40 };
+  const trending = { source: "github-trending", ok: true, found: 30 };
+  assert.equal(discoveryBroken(report([listed, { ...search, ok: false }, { ...trending, ok: false }])), true);
+  assert.equal(discoveryBroken(report([listed, search, { ...trending, ok: false }])), false); // one source still works
+  assert.equal(discoveryBroken(report([listed])), false); // --no-discover: nothing was looked for
+});
+
+test("trending pages give each repo once, from the heading link only", () => {
+  const html = readFileSync(new URL("./fixtures/trending.html", import.meta.url), "utf-8");
+  assert.deepEqual(parseTrending(html), ["acme/voice-kit", "Some-Org/agent.toolkit"]);
+  assert.deepEqual(parseTrending("<html><body>rate limited</body></html>"), []);
 });

@@ -41,6 +41,25 @@ export function farmingSigns(f: RepoFacts, rules: Rules): string[] {
   return signs;
 }
 
+/**
+ * The first reason, decidable without a model, why a repo may not be added, or
+ * null. The scan, an owner's suggestion and the apply step all ask this one
+ * question, the last time on the day's own numbers.
+ */
+export function addBlocker(f: RepoFacts, rules: Rules, opts: { now: Date; requireStarBar: boolean }): string | null {
+  const excluded = exclusionReason(f.nameWithOwner, rules);
+  if (excluded) return `owner's exclusion list: ${excluded}`;
+  if (f.isArchived || f.isDisabled) return "archived or disabled";
+  if (f.isFork) return "a fork";
+  const farming = farmingSigns(f, rules);
+  if (farming.length > 0) return `star-farming signs: ${farming.join(", ")}`;
+  if (opts.requireStarBar && !clearsStarBar(f, rules, opts.now)) return `${f.stars} stars is under the bar for its age`;
+  if (!isVendor(f.nameWithOwner, rules) && f.stars < rules.thresholds.floorIndependent) {
+    return `${f.stars} stars, under the ${rules.thresholds.floorIndependent} floor for independent projects`;
+  }
+  return null;
+}
+
 /** True when an independent listed repo has sunk clearly under the floor. */
 export function belowFloor(path: string, f: RepoFacts, rules: Rules): boolean {
   if (isVendor(path, rules)) return false;

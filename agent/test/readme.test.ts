@@ -39,11 +39,30 @@ test("every real row satisfies the row contract", () => {
 test("star cells read and format the way the weekly refresh writes them", () => {
   assert.equal(starValue("195K"), 195_000);
   assert.equal(starValue("5.1K"), 5_100);
+  assert.equal(starValue("1.2M"), 1_200_000);
   assert.equal(starValue("934"), 934);
   assert.equal(starValue("Guide"), 0);
-  assert.equal(kfmt(195_432), "195K");
-  assert.equal(kfmt(5_149), "5.1K");
-  assert.equal(kfmt(934), "934");
+  // the refresh's own cases (fmtStars in mcp/scripts/refresh-stars.ts), including where rounding differs from toFixed
+  const cases: Array<[number, string]> = [[934, "934"], [1_000, "1.0K"], [1_150, "1.2K"], [5_149, "5.1K"], [9_960, "10.0K"], [10_499, "10K"], [195_432, "195K"], [999_499, "999K"], [1_000_000, "1.0M"], [1_250_000, "1.3M"]];
+  for (const [n, cell] of cases) assert.equal(kfmt(n), cell, String(n));
+  assert.deepEqual(validateRow({ name: "Huge", url: "https://github.com/a/huge", stars: kfmt(1_000_000), desc: "ძალიან დიდი." }), []);
+});
+
+test("a table with no rows, also one at the very end of the file, keeps its lines and takes new rows", () => {
+  const empty = parseReadme(mini, cats);
+  removeRow(empty, "b/tts");
+  const text = serializeReadme(empty);
+  const again = parseReadme(text, cats);
+  assert.deepEqual(again.sections[1]!.rows, []);
+  assert.equal(serializeReadme(again), text);
+  addRow(again, "voice", { name: "Back", url: "https://github.com/b/back", stars: "1K", desc: "დაბრუნდა." });
+  assert.equal(serializeReadme(again), text.replace(`|---|---|---|\r\n\r\n## ჩვენს`, `|---|---|---|\r\n| [Back](https://github.com/b/back) | 1K | დაბრუნდა. |\r\n\r\n## ჩვენს`));
+
+  const atEnd = text.slice(0, text.lastIndexOf("|---|---|---|") + "|---|---|---|".length);
+  const last = parseReadme(atEnd, cats);
+  assert.equal(serializeReadme(last), atEnd);
+  addRow(last, "voice", { name: "Tail", url: "https://github.com/b/tail", stars: "2K", desc: "ბოლოში." });
+  assert.equal(serializeReadme(last), `${atEnd}\r\n| [Tail](https://github.com/b/tail) | 2K | ბოლოში. |`);
 });
 
 test("a new row lands before the first row with fewer stars, CRLF kept", () => {

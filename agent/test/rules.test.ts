@@ -1,14 +1,26 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { test } from "node:test";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { after, test } from "node:test";
 import { loadCategories, loadRules, REPO_ROOT } from "../src/config.js";
 import { allPaths, parseReadme } from "../src/readme.js";
-import { aiSignal, belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isStale, isVendor, staleNote } from "../src/rules.js";
-import { facts, NOW } from "./helpers.js";
+import { addBlocker, aiSignal, belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isStale, isVendor, staleNote } from "../src/rules.js";
+import { daysAgo, facts, NOW, RULES as rules } from "./helpers.js";
 
-const rules = loadRules();
-const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
+test("the owner's own rules.json loads, and nothing listed in the README is on its exclusion list", () => {
+  const real = loadRules();
+  const doc = parseReadme(readFileSync(resolve(REPO_ROOT, "README.md"), "utf-8"), loadCategories());
+  assert.deepEqual(allPaths(doc).filter((p) => exclusionReason(p, real) !== null), []);
+});
+
+test("a rules file with a pattern that does not compile is refused when it is loaded", () => {
+  const dir = mkdtempSync(join(tmpdir(), "aipulse-rules-"));
+  after(() => rmSync(dir, { recursive: true, force: true }));
+  const path = join(dir, "rules.json");
+  writeFileSync(path, JSON.stringify({ ...rules, exclude: { ...rules.exclude, namePatterns: [{ pattern: "dsh[", reason: "x" }] } }));
+  assert.throws(() => loadRules(path), /exclude\.namePatterns\.0\.pattern: not a valid regular expression/);
+});
 
 test("the owner's standing exclusions are refused, by exact path in any case", () => {
   assert.equal(exclusionReason("Wei-Shaw/sub2api", rules), "subscription pooling");
@@ -34,12 +46,6 @@ test("name patterns catch new repos of an excluded kind, and nothing else", () =
   for (const path of ["anthropics/claude-code", "x/dashboard", "x/dsharp", "openai/codex", "x/relay", "x/memcode-tools"]) {
     assert.equal(exclusionReason(path, rules), null, path);
   }
-});
-
-test("no repo in the README is on the exclusion list", () => {
-  const doc = parseReadme(readFileSync(resolve(REPO_ROOT, "README.md"), "utf-8"), loadCategories());
-  const hits = allPaths(doc).filter((p) => exclusionReason(p, rules) !== null);
-  assert.deepEqual(hits, []);
 });
 
 test("vendor owners match case-insensitively and only as the whole owner", () => {
@@ -72,6 +78,21 @@ test("the star bar depends on age: 5K inside 60 days, 20K after", () => {
   assert.ok(clearsStarBar(facts("a/x", { createdAt: daysAgo(300), stars: 20_000 }), rules, NOW));
 });
 
+test("the gates every addition passes, in order, with the reason the owner reads", () => {
+  const gate = (f: ReturnType<typeof facts>, requireStarBar = false) => addBlocker(f, rules, { now: NOW, requireStarBar });
+  assert.equal(gate(facts("a/fine")), null);
+  assert.equal(gate(facts("Wei-Shaw/sub2api", { isFork: true })), "owner's exclusion list: subscription pooling"); // the owner's word first
+  assert.equal(gate(facts("a/old", { isArchived: true })), "archived or disabled");
+  assert.equal(gate(facts("a/off", { isDisabled: true })), "archived or disabled");
+  assert.equal(gate(facts("a/copy", { isFork: true })), "a fork");
+  assert.match(gate(facts("a/farm", { stars: 9_000, forks: 10 })) ?? "", /^star-farming signs: forks\/stars/);
+  assert.equal(gate(facts("a/small", { stars: 2_999, forks: 300 })), "2999 stars, under the 3000 floor for independent projects");
+  assert.equal(gate(facts("getsentry/tiny", { stars: 900, forks: 90 })), null); // vendors stay regardless of stars
+  // the discovery bar only where the scan asks for it; an owner's suggestion needs the floor alone
+  assert.equal(gate(facts("a/young", { createdAt: daysAgo(30), stars: 4_000 }), true), "4000 stars is under the bar for its age");
+  assert.equal(gate(facts("a/young", { createdAt: daysAgo(30), stars: 4_000 })), null);
+});
+
 test("stale means 12 months without a push; archived repos are handled by removal instead", () => {
   assert.ok(isStale(facts("a/x", { pushedAt: "2025-10-01T00:00:00Z" }), rules, NOW));
   assert.ok(!isStale(facts("a/x", { pushedAt: "2025-11-30T00:00:00Z" }), rules, NOW));
@@ -85,10 +106,19 @@ test("the stale note uses the README's own wording and is recognised afterwards"
   assert.ok(!hasStaleNote("ხმის მოდელი, რომელიც აქტიურად ვითარდება."));
 });
 
-test("a staleness remark in other words also counts, so no second note is proposed", () => {
-  // nomic-ai/gpt4all's entry says it this way, without "შენიშვნა:"
-  assert.ok(hasStaleNote("desktop GUI. **⚠️ აქტიური განვითარება შეჩერებულია**: ბოლო GitHub commit 2025 წლის მაისია."));
-  assert.ok(hasStaleNote("2024 წლის აგვისტოს შემდეგ აღარ ვითარდება."));
+test("every way the README has said a repo went quiet counts as a note, so no second one is proposed", () => {
+  // the wordings in the README on 2026-10-21, trimmed to the remark itself
+  const wordings = [
+    "შენიშვნა: ეს კვლევის კოდია და 2024 წლის აგვისტოს შემდეგ აღარ განახლებულა — სასწავლოდ და ისტორიული მნიშვნელობით.",
+    "შენიშვნა: ეს repo ძირითადად ისტორიული მნიშვნელობისაა და 2024 წლის ივნისის შემდეგ აღარ განახლებულა.",
+    "შენიშვნა: Coqui AI კომპანია 2024 წელს დაიხურა და ეს repo 2024 წლის აგვისტოს შემდეგ აღარ განახლებულა.",
+    "შენიშვნა: Bark-ის განახლებები 2024 წლის აგვისტოში შეჩერდა.",
+    "შენიშვნა: 2025 წლის იანვრის შემდეგ აღარ განახლებულა — ახალი პროექტისთვის აქტიურად განვითარებადი ფრეიმვორკი აირჩიე.",
+    "შენიშვნა: 2024 წლის აგვისტოს შემდეგ აღარ ვითარდება — აქტიური ალტერნატივებია Open WebUI და LibreChat.",
+    // gpt4all's entry says it without "შენიშვნა:"
+    "desktop GUI. **⚠️ აქტიური განვითარება შეჩერებულია**: ბოლო GitHub commit 2025 წლის მაისია.",
+  ];
+  for (const w of wordings) assert.ok(hasStaleNote(`ხმის მოდელი. ${w}`), w);
 });
 
 test("the free AI pre-check passes AI repos and stops the trending pages' everything-else", () => {
@@ -107,11 +137,4 @@ test("the free AI pre-check passes AI repos and stops the trending pages' everyt
   ];
   for (const f of ai) assert.ok(aiSignal(f), f.nameWithOwner);
   for (const f of other) assert.ok(!aiSignal(f), f.nameWithOwner);
-});
-
-test("every dated note already in the README counts as a note", () => {
-  const doc = parseReadme(readFileSync(resolve(REPO_ROOT, "README.md"), "utf-8"), loadCategories());
-  const noted = doc.sections.flatMap((s) => s.rows).filter((r) => /შენიშვნა:.*20\d\d წ/.test(r.desc));
-  assert.ok(noted.length >= 6);
-  for (const r of noted) assert.ok(hasStaleNote(r.desc), r.name);
 });

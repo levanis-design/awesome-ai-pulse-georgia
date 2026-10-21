@@ -5,35 +5,51 @@
  */
 import { z } from "zod";
 import type { CategoryMeta } from "./config.js";
-import type { RestClient } from "./github.js";
+import { GitHubError, type RestClient } from "./github.js";
 
 const repoPath = z.string().regex(/^[\w.-]+\/[\w.-]+$/);
+
+/** Longest GitHub description the English refresh carries over (the scan skips longer ones). */
+export const ENGLISH_MAX = 400;
+
+/**
+ * Text that the issue summary renders as Markdown. Much of it comes from a
+ * model that read a stranger's README, so it may not break lines, open code
+ * fences or write tags (the agent's own JSON block must stay the only one).
+ */
+const line = (max: number) => z.string().max(max).refine((s) => !/[\r\n`<>]/.test(s), "one plain line, without backticks or angle brackets");
+
+/** Model or third-party text made safe for the summary: one line, no fences or tags, capped. */
+export function oneLine(text: string, max = 300): string {
+  const flat = text.replace(/`/g, "'").replace(/</g, "‹").replace(/>/g, "›").replace(/\s+/g, " ").trim();
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+}
 
 export const ProposalSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("add"),
     repo: repoPath,
-    name: z.string().min(1).max(80),
+    name: line(80).refine((s) => s.length > 0 && !/[[\]|]/.test(s), "a display name the README link can hold"),
     category: z.string(),
     description: z.string().min(80).max(1500),
     stars: z.number().int().nonnegative(),
-    why: z.string(),
-    warnings: z.array(z.string()),
+    why: line(300),
+    warnings: z.array(line(300)).max(12),
     evidence: z.record(z.union([z.string(), z.number(), z.null()])),
   }),
   z.object({
     type: z.literal("remove"),
     repo: z.string().min(3),
     reason: z.enum(["deleted", "archived", "disabled", "below-floor", "other"]),
-    detail: z.string(),
+    detail: line(300),
   }),
   z.object({ type: z.literal("rename"), from: repoPath, to: repoPath }),
-  z.object({ type: z.literal("move"), repo: repoPath, from: z.string(), to: z.string(), why: z.string() }),
-  z.object({ type: z.literal("describe"), repo: repoPath, old: z.string(), new: z.string().min(80).max(1500), why: z.string() }),
-  z.object({ type: z.literal("note"), repo: repoPath, note: z.string().min(10) }),
+  z.object({ type: z.literal("move"), repo: repoPath, from: z.string(), to: z.string(), why: line(300) }),
+  z.object({ type: z.literal("describe"), repo: repoPath, old: z.string(), new: z.string().min(80).max(1500), why: line(300) }),
+  z.object({ type: z.literal("note"), repo: repoPath, note: line(300).refine((s) => s.length >= 10) }),
   z.object({
     type: z.literal("english"),
-    updates: z.array(z.object({ repo: repoPath, description: z.string().min(1).max(400) })).min(1),
+    updates: z.array(z.object({ repo: repoPath, description: z.string().min(1).max(ENGLISH_MAX).refine((s) => !/[\r\n]/.test(s)) })).min(1),
   }),
 ]);
 
@@ -58,7 +74,9 @@ const LABEL_COLORS: Record<string, string> = {
   [LABELS.suggestion]: "FBCA04",
 };
 
-const MARKER = "<!-- aipulse-agent:proposal v1 -->";
+/** First line of every proposal body; it names the proposal's key, which the JSON block must match. */
+const HEAD = /^<!-- aipulse-agent:proposal v1 key=(\S+) -->\n/;
+const FENCE = "\n```json\n";
 
 /** GitHub refuses issue bodies longer than this (65,536), with a margin for its own counting. */
 export const ISSUE_BODY_MAX = 60_000;
@@ -71,15 +89,22 @@ export function trustedAuthors(repo: string): string[] {
   return ["github-actions[bot]", repo.split("/")[0] ?? ""];
 }
 
-/** One open proposal per repo and kind; the English refresh is a single batch. */
+/**
+ * The one spelling of a proposal key: one open proposal per repo and kind,
+ * case-insensitive; the English refresh is a single batch with no repo.
+ */
+export function keyOf(type: ProposalType, repo = ""): string {
+  return type === "english" ? "english" : `${type}:${repo.toLowerCase()}`;
+}
+
 export function proposalKey(p: Proposal): string {
   switch (p.type) {
     case "rename":
-      return `rename:${p.from.toLowerCase()}`;
+      return keyOf(p.type, p.from);
     case "english":
-      return "english";
+      return keyOf(p.type);
     default:
-      return `${p.type}:${p.repo.toLowerCase()}`;
+      return keyOf(p.type, p.repo);
   }
 }
 
@@ -87,7 +112,7 @@ const REMOVE_REASON: Record<string, string> = {
   deleted: "წაშლილია",
   archived: "დაარქივდა",
   disabled: "გათიშულია",
-  "below-floor": "~3,000 ვარსკვლავს ქვემოთ ჩავიდა",
+  "below-floor": "ვარსკვლავების ზღვარს ქვემოთ ჩავიდა",
   other: "სხვა მიზეზი",
 };
 
@@ -121,23 +146,23 @@ function summary(p: Proposal, categories: CategoryMeta[]): string[] {
       return [
         `**რეპო:** https://github.com/${p.repo} · ⭐ ${p.stars.toLocaleString("en-US")}`,
         `**კატეგორია:** ${cat(categories, p.category)}`,
-        `**რატომ:** ${p.why}`,
+        `**რატომ:** ${oneLine(p.why)}`,
         "",
         "**აღწერა, რომელიც სიაში ჩაიწერება:**",
         "",
         `> ${p.description}`,
-        ...(p.warnings.length > 0 ? ["", "**⚠️ შენიშვნები შემოწმებიდან:**", ...p.warnings.map((w) => `- ${w}`)] : []),
+        ...(p.warnings.length > 0 ? ["", "**⚠️ შენიშვნები შემოწმებიდან:**", ...p.warnings.map((w) => `- ${oneLine(w)}`)] : []),
       ];
     case "remove":
-      return [`**რეპო:** ${p.repo.includes("://") ? p.repo : `https://github.com/${p.repo}`}`, `**მიზეზი:** ${REMOVE_REASON[p.reason]} — ${p.detail}`];
+      return [`**რეპო:** ${p.repo.includes("://") ? p.repo : `https://github.com/${p.repo}`}`, `**მიზეზი:** ${REMOVE_REASON[p.reason]} — ${oneLine(p.detail)}`];
     case "rename":
       return [`GitHub-მა რეპო ახალ მისამართზე გადაიტანა. სიაში ბმული შეიცვლება, ადგილი და აღწერა იგივე დარჩება.`, `**ძველი:** https://github.com/${p.from}`, `**ახალი:** https://github.com/${p.to}`];
     case "move":
-      return [`**რეპო:** https://github.com/${p.repo}`, `**საიდან:** ${cat(categories, p.from)}`, `**სად:** ${cat(categories, p.to)}`, `**რატომ:** ${p.why}`];
+      return [`**რეპო:** https://github.com/${p.repo}`, `**საიდან:** ${cat(categories, p.from)}`, `**სად:** ${cat(categories, p.to)}`, `**რატომ:** ${oneLine(p.why)}`];
     case "describe":
-      return [`**რეპო:** https://github.com/${p.repo}`, `**რატომ:** ${p.why}`, "", "**ახლანდელი:**", "", `> ${p.old}`, "", "**ახალი:**", "", `> ${p.new}`];
+      return [`**რეპო:** https://github.com/${p.repo}`, `**რატომ:** ${oneLine(p.why)}`, "", "**ახლანდელი:**", "", `> ${p.old}`, "", "**ახალი:**", "", `> ${p.new}`];
     case "note":
-      return [`**რეპო:** https://github.com/${p.repo}`, `აღწერის ბოლოს დაემატება: ${p.note}`];
+      return [`**რეპო:** https://github.com/${p.repo}`, `აღწერის ბოლოს დაემატება: ${oneLine(p.note)}`];
     case "english":
       return [`MCP სერვერისა და საიტის ინგლისური აღწერები GitHub-ის ახლანდელ ტექსტს გაუთანაბრდება (${p.updates.length} რეპო). ქართული აღწერები არ იცვლება.`];
   }
@@ -145,11 +170,11 @@ function summary(p: Proposal, categories: CategoryMeta[]): string[] {
 
 export function issueBody(p: Proposal, categories: CategoryMeta[]): string {
   return [
-    MARKER,
+    `<!-- aipulse-agent:proposal v1 key=${proposalKey(p)} -->`,
     ...summary(p, categories),
     "",
     "---",
-    "დასამტკიცებლად: Grok Bot-ში თქვი „დაამტკიცე #ნომერი“, ან აქ დაამატე label `agent:approved`. უარისთვის — `agent:rejected`.",
+    `დასამტკიცებლად: Grok Bot-ში თქვი „დაამტკიცე #ნომერი“, ან აქ დაამატე ლეიბლი \`${LABELS.approved}\`. უარისთვის — \`${LABELS.rejected}\` (და დახურე).`,
     "",
     "<details><summary>მონაცემები აგენტისთვის (JSON)</summary>",
     "",
@@ -161,14 +186,23 @@ export function issueBody(p: Proposal, categories: CategoryMeta[]): string {
   ].join("\n");
 }
 
-/** The proposal inside an issue body, or null when the body is not ours or is malformed. */
+/**
+ * The proposal inside an issue body, or null when the body is not ours, is
+ * malformed, or its data does not match the key in its first line. Only the
+ * LAST json block counts: the agent writes it at the very end, below any text
+ * a model produced.
+ */
 export function parseIssueBody(body: string | null | undefined): Proposal | null {
-  if (!body || !body.startsWith(MARKER)) return null;
-  const m = /```json\n([\s\S]*?)\n```/.exec(body.replace(/\r\n/g, "\n"));
-  if (!m) return null;
+  const text = (body ?? "").replace(/\r\n/g, "\n");
+  const head = HEAD.exec(text);
+  const open = text.lastIndexOf(FENCE);
+  if (!head || open < 0) return null;
+  const start = open + FENCE.length;
+  const end = text.indexOf("\n```", start);
+  if (end < 0) return null;
   try {
-    const parsed = ProposalSchema.safeParse(JSON.parse(m[1]!));
-    return parsed.success ? parsed.data : null;
+    const parsed = ProposalSchema.safeParse(JSON.parse(text.slice(start, end)));
+    return parsed.success && proposalKey(parsed.data) === head[1] ? parsed.data : null;
   } catch {
     return null;
   }
@@ -245,15 +279,20 @@ export class IssueStore {
     }
   }
 
-  async list(opts: { label: string; state: "open" | "closed" | "all"; maxPages?: number }): Promise<IssueRecord[]> {
+  /** Issues with a label, newest first, up to `maxPages` × 100. With `complete`, reaching that cap is an error, not a silent cut. */
+  async list(opts: { label: string; state: "open" | "closed" | "all"; maxPages?: number; complete?: boolean }): Promise<IssueRecord[]> {
     const out: IssueRecord[] = [];
-    for (let page = 1; page <= (opts.maxPages ?? 5); page++) {
+    const max = opts.maxPages ?? 5;
+    for (let page = 1; ; page++) {
       const params = new URLSearchParams({ labels: opts.label, state: opts.state, per_page: "100", page: String(page) });
       const batch = await this.gh.rest<RawIssue[]>("GET", `/repos/${this.repo}/issues?${params}`);
       out.push(...batch.filter((i) => !i.pull_request).map(toRecord));
-      if (batch.length < 100) break;
+      if (batch.length < 100) return out;
+      if (page >= max) {
+        if (opts.complete) throw new Error(`more than ${max * 100} '${opts.label}' issues: the history would be incomplete`);
+        return out;
+      }
     }
-    return out;
   }
 
   async get(number: number): Promise<IssueRecord> {
@@ -280,9 +319,21 @@ export class IssueStore {
   async removeLabel(number: number, label: string): Promise<void> {
     try {
       await this.gh.rest("DELETE", `/repos/${this.repo}/issues/${number}/labels/${encodeURIComponent(label)}`);
-    } catch {
-      // the label was not there
+    } catch (err) {
+      if (!(err instanceof GitHubError && err.status === 404)) throw err; // 404: the label was not there
     }
+  }
+
+  /** Who added the approval label most recently, or null when nobody did. Events come oldest first. */
+  async approvedBy(number: number): Promise<string | null> {
+    type Event = { event: string; label?: { name: string }; actor?: { login: string } | null };
+    let last: string | null = null;
+    for (let page = 1; page <= 10; page++) {
+      const events = await this.gh.rest<Event[]>("GET", `/repos/${this.repo}/issues/${number}/events?per_page=100&page=${page}`);
+      for (const e of events) if (e.event === "labeled" && e.label?.name === LABELS.approved) last = e.actor?.login ?? null;
+      if (events.length < 100) return last;
+    }
+    throw new Error(`#${number} has more than 1,000 events, so who approved it cannot be told`);
   }
 
   async comment(number: number, body: string): Promise<void> {
@@ -295,7 +346,8 @@ export class IssueStore {
 
   /** Every proposal ever filed, grouped by key, for isBlocked(). */
   async history(): Promise<Map<string, IssueRecord[]>> {
-    const all = await this.list({ label: LABELS.proposal, state: "all", maxPages: 10 });
+    // a rejection that fell off the end would let a "never again" repo come back, so the read must be complete
+    const all = await this.list({ label: LABELS.proposal, state: "all", maxPages: 50, complete: true });
     const keys = new Map<string, IssueRecord[]>();
     for (const i of all) {
       if (!i.proposal) continue;

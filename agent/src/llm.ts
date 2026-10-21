@@ -61,7 +61,8 @@ export function descriptionProblems(desc: string): string[] {
   if (desc.length < 200 || desc.length > 1200) p.push(`length ${desc.length} outside 200–1200`);
   if (/[|\n\r]/.test(desc)) p.push("contains a pipe or a line break");
   if (/ {2}/.test(desc) || desc !== desc.trim()) p.push("stray spacing");
-  if (/https?:\/\//i.test(desc) || /\]\(/.test(desc)) p.push("contains a URL or markdown link");
+  if (/https?:\/\/|\bwww\./i.test(desc) || /\]\(/.test(desc)) p.push("contains a URL or markdown link");
+  if (/[\w.+-]+@[\w-]+(\.[\w-]+)*\.[a-z]{2,}/i.test(desc)) p.push("contains an e-mail address");
   if (/<[a-z/!][^>]*>/i.test(desc)) p.push("contains HTML");
   if (/\d[\d,.]*\s*[KkMm]?\+?\s*(⭐|ვარსკვლავ|stars?\b)/.test(desc)) p.push("states a star count (the ⭐ column carries stars)");
   if (!/[.!?)»“"]$/.test(desc)) p.push("does not end a sentence");

@@ -12,9 +12,9 @@ import type { GitHub } from "./github.js";
 import { descriptionProblems, draftEntry, factCheck, NoLlmError, reviewEntry, reviseEntry, type LlmConfig } from "./llm.js";
 import { log } from "./log.js";
 import { judgedRecently, remember, type Memory } from "./memory.js";
-import { ISSUE_BODY_MAX, IssueStore, isBlocked, issueBody, proposalKey, type IssueRecord, type Proposal, type ProposalType } from "./proposals.js";
+import { ENGLISH_MAX, ISSUE_BODY_MAX, IssueStore, isBlocked, issueBody, keyOf, LABELS, oneLine, proposalKey, ProposalSchema, type IssueRecord, type Proposal, type ProposalType } from "./proposals.js";
 import { allPaths, getRow, parseReadme, type ReadmeDoc } from "./readme.js";
-import { aiSignal, belowFloor, clearsStarBar, exclusionReason, farmingSigns, hasStaleNote, isStale, isVendor, ownerOf, staleNote } from "./rules.js";
+import { addBlocker, aiSignal, belowFloor, clearsStarBar, hasStaleNote, isStale, ownerOf, staleNote } from "./rules.js";
 
 export type Ctx = {
   gh: GitHub;
@@ -46,9 +46,27 @@ export function loadDoc(ctx: Ctx): ReadmeDoc {
 function loadEnglishCache(root: string): Record<string, { description: string | null }> {
   try {
     return JSON.parse(readFileSync(resolve(root, "mcp", "data", "github-cache.json"), "utf-8"));
-  } catch {
-    return {};
+  } catch (err) {
+    // no cache yet means every description is new; a broken one must not read as "all new"
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return {};
+    throw err;
   }
+}
+
+/**
+ * Every listed repo by its README path and by its current GitHub name, both
+ * lower-cased, each pointing at the README path. A repo that moved is still
+ * listed under its old address until the rename is applied.
+ */
+export async function listedNames(gh: GitHub, doc: ReadmeDoc, known?: Map<string, RepoFacts | null>): Promise<Map<string, string>> {
+  const paths = allPaths(doc).filter((p) => REPO_PATH.test(p));
+  const live = known ?? (await fetchFacts(gh, paths));
+  const names = new Map(paths.map((p) => [p.toLowerCase(), p]));
+  for (const p of paths) {
+    const f = live.get(p.toLowerCase());
+    if (f) names.set(f.nameWithOwner.toLowerCase(), p);
+  }
+  return names;
 }
 
 /** Health of what is already listed: gone, archived, moved, sunk under the floor, gone quiet. */
@@ -92,7 +110,7 @@ export function englishProposal(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, Rep
   for (const path of allPaths(doc).filter((p) => REPO_PATH.test(p))) {
     const f = facts.get(path.toLowerCase());
     const fresh = f?.description?.trim();
-    if (!f || !fresh || fresh.length > 400) continue;
+    if (!f || !fresh || fresh.length > ENGLISH_MAX) continue;
     if ((cache[path]?.description ?? "").trim() !== fresh) updates.push({ repo: path, description: fresh });
   }
   if (updates.length === 0) return null;
@@ -120,20 +138,12 @@ export async function evaluateRepo(
   opts: { ownerNote?: string; requireStarBar: boolean },
 ): Promise<Evaluation> {
   const path = f.nameWithOwner;
-  const excluded = exclusionReason(path, ctx.rules);
-  if (excluded) return { skip: `owner's exclusion list: ${excluded}` };
-  if (f.isArchived || f.isDisabled) return { skip: "archived or disabled" };
-  if (f.isFork) return { skip: "a fork" };
-  const farming = farmingSigns(f, ctx.rules);
-  if (farming.length > 0) return { skip: `star-farming signs: ${farming.join(", ")}` };
-  if (opts.requireStarBar && !clearsStarBar(f, ctx.rules, ctx.now)) return { skip: `${f.stars} stars is under the bar for its age` };
-  if (!isVendor(path, ctx.rules) && f.stars < ctx.rules.thresholds.floorIndependent) {
-    return { skip: `${f.stars} stars, under the ${ctx.rules.thresholds.floorIndependent} floor for independent projects` };
-  }
+  const blocker = addBlocker(f, ctx.rules, { now: ctx.now, requireStarBar: opts.requireStarBar });
+  if (blocker) return { skip: blocker };
   const readme = await ctx.gh.readme(path);
   const slugs = ctx.categories.map((c) => c.slug);
   const draft = await draftEntry(ctx.llm, { facts: f, readme, slugs, examples: styleExamples(doc), ...(opts.ownerNote ? { ownerNote: opts.ownerNote } : {}) });
-  if (!draft.relevant) return { skip: `not a fit for the collection: ${draft.why}` };
+  if (!draft.relevant) return { skip: `not a fit for the collection: ${oneLine(String(draft.why), 200)}` };
   if (!slugs.includes(draft.category)) return { skip: `model picked unknown category '${draft.category}'` };
   let description = draft.description.trim();
   const warnings: string[] = [];
@@ -141,13 +151,15 @@ export async function evaluateRepo(
   if (!check.ok) {
     description = (await reviseEntry(ctx.llm, { facts: f, readme, description, problems: check.problems })).trim();
     check = await factCheck(ctx.llm, { facts: f, readme, description });
-    if (!check.ok) warnings.push(...check.problems.map((p) => `ფაქტების შემოწმება: ${p}`));
+    if (!check.ok) warnings.push(...check.problems.slice(0, 10).map((p) => oneLine(`ფაქტების შემოწმება: ${String(p)}`)));
   }
   const shape = descriptionProblems(description);
   if (shape.length > 0) return { skip: `description failed the format check: ${shape.join("; ")}`, retry: true };
   if (draft.confidence === "low") warnings.push("მოდელი კატეგორიაში ან აღწერაში დარწმუნებული არ არის — ყურადღებით გადახედე.");
   const taken = new Set(doc.sections.flatMap((s) => s.rows.map((r) => r.name.toLowerCase())));
-  const name = taken.has(draft.name.toLowerCase()) ? `${draft.name} (${ownerOf(path)})` : draft.name;
+  // the display name becomes README link text: one short line without brackets or pipes
+  const short = oneLine(String(draft.name), 60).replace(/[[\]|]/g, "").trim() || path.split("/")[1]!;
+  const name = taken.has(short.toLowerCase()) ? `${short} (${ownerOf(path)})` : short;
   return {
     proposal: {
       type: "add",
@@ -156,7 +168,7 @@ export async function evaluateRepo(
       category: draft.category,
       description,
       stars: f.stars,
-      why: draft.why,
+      why: oneLine(String(draft.why)),
       warnings,
       evidence: { created: f.createdAt.slice(0, 10), stars: f.stars, forks: f.forks, watchers: f.watchers, commits: f.commits, licence: f.license, language: f.language },
     },
@@ -174,7 +186,7 @@ async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, Repo
   const changed = english.updates
     .map((u) => ({ u, f: facts.get(u.repo.toLowerCase()) }))
     .filter((x): x is { u: { repo: string; description: string }; f: RepoFacts } => !!x.f)
-    .filter(({ u, f }) => !judgedRecently(memory, `review:${u.repo}`, f.stars, ctx.now) && !blocked({ type: "describe" }, `describe:${u.repo.toLowerCase()}`))
+    .filter(({ u, f }) => !judgedRecently(memory, `review:${u.repo}`, f.stars, ctx.now) && !blocked({ type: "describe" }, keyOf("describe", u.repo)))
     .sort((a, b) => b.f.stars - a.f.stars)
     .slice(0, ctx.rules.thresholds.maxDescriptionReviewsPerScan);
   const out: Proposal[] = [];
@@ -186,7 +198,7 @@ async function reviewProposals(ctx: Ctx, doc: ReadmeDoc, facts: Map<string, Repo
     if (review.stillAccurate || !review.description) continue;
     const next = review.description.trim();
     if (descriptionProblems(next).length > 0) continue;
-    out.push({ type: "describe", repo: u.repo, old: row.desc, new: next, why: review.why });
+    out.push({ type: "describe", repo: u.repo, old: row.desc, new: next, why: oneLine(String(review.why)) });
   }
   return out;
 }
@@ -215,12 +227,12 @@ export async function considerCandidates(ctx: Ctx, doc: ReadmeDoc, ranked: RepoF
   for (const f of ranked) {
     if (run.drafted >= opts.budget) break;
     const path = f.nameWithOwner;
-    const quick = exclusionReason(path, ctx.rules) ?? (farmingSigns(f, ctx.rules).join(", ") || null) ?? (aiSignal(f) ? null : NO_AI_SIGNAL);
+    const quick = addBlocker(f, ctx.rules, { now: ctx.now, requireStarBar: true }) ?? (aiSignal(f) ? null : NO_AI_SIGNAL);
     if (quick) {
       run.skipped.push({ repo: path, why: quick });
       continue;
     }
-    const key = `add:${path.toLowerCase()}`;
+    const key = keyOf("add", path);
     if (opts.blocked({ type: "add" }, key)) {
       run.held.push({ key, why: "already proposed, or rejected" });
       continue;
@@ -257,7 +269,15 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
   const memory = opts.memory ?? {};
   const store = new IssueStore(ctx.gh, ctx.rules.repo);
   // what was proposed before decides what is still worth a model call, so it is read first
-  const history: Map<string, IssueRecord[]> = opts.dryRun ? await store.history().catch(() => new Map()) : await store.history();
+  let history: Map<string, IssueRecord[]>;
+  try {
+    history = await store.history();
+  } catch (err) {
+    if (!opts.dryRun) throw err;
+    // a dry run may go on without it, but says so: what it shows may already be open or rejected
+    history = new Map();
+    report.notes.push(`dry run without the proposal history (${(err as Error).message.slice(0, 120)}): some of these may already be proposed or rejected`);
+  }
   const blocked: Blocked = (p, key) => isBlocked(p, history.get(key) ?? [], ctx.now);
   const doc = loadDoc(ctx);
   const listed = allPaths(doc).filter((p) => REPO_PATH.test(p));
@@ -280,8 +300,7 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
   }
 
   if (opts.discover) {
-    const listedLower = new Set(listed.map((p) => p.toLowerCase()));
-    for (const f of facts.values()) if (f) listedLower.add(f.nameWithOwner.toLowerCase());
+    const listedLower = await listedNames(ctx.gh, doc, facts);
     const search = await searchCandidates(ctx.gh, ctx.rules, ctx.now);
     const trending = await trendingCandidates(ctx.gh);
     report.sources.push(search.report, trending.report);
@@ -296,7 +315,10 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
 
   for (const p of proposals) {
     const key = proposalKey(p);
-    if (blocked(p, key)) report.held.push({ key, why: "already proposed, or rejected recently" });
+    // what is filed must read back exactly as the apply step will parse it
+    const check = ProposalSchema.safeParse(p);
+    if (!check.success) report.notes.push(`${key} was not filed: ${check.error.issues.map((i) => `${i.path.join(".")} ${i.message}`).join("; ")}`);
+    else if (blocked(p, key)) report.held.push({ key, why: "already proposed, or rejected recently" });
     else report.proposals.push(p);
   }
   if (!opts.dryRun && report.proposals.length > 0) {
@@ -311,6 +333,12 @@ export async function runScan(ctx: Ctx, opts: ScanOptions): Promise<ScanReport> 
 }
 
 /** An owner's suggestion issue → a proposal (or a reasoned no), answered on the issue. */
+/** Discovery found nothing because every source broke, not because nothing is new. */
+export function discoveryBroken(r: ScanReport): boolean {
+  const discovery = r.sources.filter((s) => s.source !== "listed-repos");
+  return discovery.length > 0 && discovery.every((s) => !s.ok);
+}
+
 export async function runSuggestion(ctx: Ctx, number: number, dryRun: boolean): Promise<{ outcome: string; proposal?: Proposal }> {
   const store = new IssueStore(ctx.gh, ctx.rules.repo);
   const issue = await store.get(number);
@@ -337,12 +365,14 @@ export async function runSuggestion(ctx: Ctx, number: number, dryRun: boolean): 
     await reply(`GitHub-ზე ${path} ვერ ვიპოვე.`);
     return { outcome: "repo not found" };
   }
-  if (getRow(doc, f.nameWithOwner)) {
-    await reply(`${f.nameWithOwner} უკვე სიაშია.`);
+  // listed under an older address counts too: GitHub redirects that row to this repo
+  const listedAs = (await listedNames(ctx.gh, doc)).get(f.nameWithOwner.toLowerCase());
+  if (listedAs) {
+    await reply(`${f.nameWithOwner} უკვე სიაშია${listedAs.toLowerCase() === f.nameWithOwner.toLowerCase() ? "" : ` (ძველი მისამართით: ${listedAs})`}.`);
     return { outcome: "already listed" };
   }
   // the owner's explicit suggestion overrides an earlier rejection, but not an open proposal
-  const open = (await store.history()).get(`add:${f.nameWithOwner.toLowerCase()}`)?.find((i) => i.state === "open");
+  const open = (await store.history()).get(keyOf("add", f.nameWithOwner))?.find((i) => i.state === "open");
   if (open) {
     await reply(`ეს რეპო უკვე შეთავაზებულია: #${open.number}.`);
     return { outcome: `already proposed as #${open.number}` };
@@ -356,7 +386,7 @@ export async function runSuggestion(ctx: Ctx, number: number, dryRun: boolean): 
   if (!dryRun) {
     await store.ensureLabels();
     const filed = await store.create(ev.proposal, ctx.categories);
-    await reply(`შეთავაზება მზადაა: #${filed.number}. დაამტკიცე Grok Bot-ში ან label-ით \`agent:approved\`.`);
+    await reply(`შეთავაზება მზადაა: #${filed.number}. დაამტკიცე Grok Bot-ში ან ლეიბლით \`${LABELS.approved}\`.`);
   }
   return { outcome: "proposed", proposal: ev.proposal };
 }

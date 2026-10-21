@@ -28,9 +28,13 @@ jobs:
       group: agent-suggest-${{ github.event.issue.number }}
       cancel-in-progress: false
     steps:
+      # no token is left in .git/config for install scripts to find
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
+      # Node 22: Node 20 reached its end of life in April 2026
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
@@ -49,4 +53,4 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AGENT_MODEL: ${{ vars.AGENT_MODEL }}
           ISSUE: ${{ github.event.issue.number }}
-        run: npx tsx src/cli.ts suggest --issue "$ISSUE"
+        run: npm run suggest -- --issue "$ISSUE"

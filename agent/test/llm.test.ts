@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { test } from "node:test";
+import { REPO_ROOT } from "../src/config.js";
 import { callClaude, descriptionProblems, draftEntry, extractJson, llmFromEnv, NoLlmError } from "../src/llm.js";
+import { CATEGORY_RULES } from "../src/taxonomy.js";
 import { DESC_OK, facts } from "./helpers.js";
 
 const CFG = { apiKey: "k-test", model: "claude-test" };
@@ -26,6 +30,8 @@ test("the format check refuses what would break the table or mislead the reader"
     [DESC_OK.replace("ბიბლიოთეკაა,", "ბიბლიოთეკაა\n"), /pipe or a line break/],
     [DESC_OK.replace("ბიბლიოთეკაა,", "ბიბლიოთეკაა,  "), /stray spacing/],
     [`${DESC_OK} ნახე https://example.com.`, /URL/],
+    [`${DESC_OK} ნახე www.example.com.`, /URL/],
+    [`${DESC_OK} მისწერე hello@example.com.`, /e-mail/],
     [`${DESC_OK} ნახე [აქ](x).`, /markdown link/],
     [`${DESC_OK} <b>ახალი</b>.`, /HTML/],
     [`${DESC_OK} მას 50K ⭐ აქვს.`, /star count/],
@@ -37,8 +43,14 @@ test("the format check refuses what would break the table or mislead the reader"
   for (const [desc, why] of cases) assert.ok(descriptionProblems(desc).some((p) => why.test(p)), `${why} for: ${desc.slice(0, 60)}…`);
 });
 
-test("version numbers and model names are not mistaken for star counts", () => {
+test("version numbers, model names and npm packages are not mistaken for stars, links or e-mail", () => {
   assert.deepEqual(descriptionProblems(DESC_OK.replace("Python, MIT.", "Python 3.10+, GPT-4 და Llama 3 მოდელებით, MIT.")), []);
+  assert.deepEqual(descriptionProblems(DESC_OK.replace("Python, MIT.", "`npx @acme/voice-kit@latest` ბრძანებით ეშვება. MIT.")), []);
+});
+
+test("every category the data knows has a placement rule for the model, and no rule is left over", () => {
+  const data = JSON.parse(readFileSync(resolve(REPO_ROOT, "mcp/data/repos.json"), "utf-8")) as { categories: Array<{ slug: string }> };
+  assert.deepEqual(Object.keys(CATEGORY_RULES).sort(), data.categories.map((c) => c.slug).sort());
 });
 
 test("configuration comes from the environment, with a default model", () => {

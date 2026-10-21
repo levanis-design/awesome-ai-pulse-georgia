@@ -10,11 +10,11 @@ import {
   saveMemory,
   type Memory,
 } from "../src/memory.js";
-import { NOW } from "./helpers.js";
+import { daysAgo as isoDaysAgo, NOW } from "./helpers.js";
 
 const dir = mkdtempSync(join(tmpdir(), "aipulse-memory-"));
 after(() => rmSync(dir, { recursive: true, force: true }));
-const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);
+const daysAgo = (n: number) => new Date(isoDaysAgo(n));
 
 test("a verdict holds for 30 days, unless the repo doubles its stars", () => {
   const m: Memory = {};

@@ -8,20 +8,19 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test, type TestContext } from "node:test";
-import { loadRules } from "../src/config.js";
 import type { RepoFacts } from "../src/facts.js";
 import type { GitHub } from "../src/github.js";
 import type { Memory } from "../src/memory.js";
 import { LABELS, parseIssueBody } from "../src/proposals.js";
 import { runScan, runSuggestion, type Ctx } from "../src/scan.js";
-import { CATS, DESC_OK, facts, fakeTracker, issue, miniReadme, NOW, rawRepo } from "./helpers.js";
+import { CATS, DESC_OK, facts, fakeTracker, issue, miniReadme, NOW, rawRepo, RULES } from "./helpers.js";
 
 const root = mkdtempSync(join(tmpdir(), "aipulse-flow-"));
 after(() => rmSync(root, { recursive: true, force: true }));
 writeFileSync(
   join(root, "README.md"),
   miniReadme(
-    ["| [Gone](https://github.com/a/gone) | 50K | წაშლილი. |", "| [Keep](https://github.com/a/keep) | 20K | ჩვეულებრივი. |"],
+    ["| [Gone](https://github.com/a/gone) | 50K | წაშლილი. |", "| [Old](https://github.com/a/oldname) | 25K | ძველი სახელით. |", "| [Keep](https://github.com/a/keep) | 20K | ჩვეულებრივი. |"],
     ["| [Tts](https://github.com/b/tts) | 30K | ხმის მოდელი. |"],
   ),
 );
@@ -30,6 +29,9 @@ writeFileSync(join(root, "mcp", "data", "github-cache.json"), JSON.stringify({ "
 
 const live = new Map<string, RepoFacts>([
   ["a/keep", facts("a/keep", { description: null })],
+  // GitHub moved a/oldname; the README still has the old address
+  ["a/oldname", facts("a/newname", { description: null })],
+  ["a/newname", facts("a/newname", { description: null })],
   ["b/tts", facts("b/tts", { description: "A rewritten voice engine" })],
   ["acme/brand-new", facts("acme/brand-new", { stars: 6_000, description: "Open-source TTS with voice cloning.", createdAt: "2026-09-30T00:00:00Z" })],
 ]);
@@ -40,6 +42,7 @@ const tracker = fakeTracker(REPO, [
   issue(52, { body: "https://github.com/b/tts", labels: [LABELS.suggestion], user: { login: "owner" } }),
   issue(53, { body: "https://github.com/acme/brand-new\n\nხმისთვის", labels: [LABELS.suggestion], user: { login: "owner" } }),
   issue(54, { body: "https://github.com/acme/brand-new", labels: [LABELS.suggestion], user: { login: "owner" } }),
+  issue(55, { body: "https://github.com/a/newname", labels: [LABELS.suggestion], user: { login: "owner" } }),
 ]);
 const gh = {
   rest: tracker.client.rest,
@@ -55,7 +58,7 @@ const gh = {
     return { data, errors };
   },
 } as unknown as GitHub;
-const ctx: Ctx = { gh, rules: { ...loadRules(), repo: REPO }, categories: CATS, root, llm: { apiKey: "k-test", model: "m" }, now: NOW };
+const ctx: Ctx = { gh, rules: { ...RULES, repo: REPO }, categories: CATS, root, llm: { apiKey: "k-test", model: "m" }, now: NOW };
 
 /** Claude, as far as these flows need it: reviews say "changed", drafts say "fits", checks pass. */
 function claude(t: TestContext) {
@@ -75,10 +78,10 @@ const memory: Memory = {};
 test("a scan files each finding once, as a labelled issue the agent can read back", async (t) => {
   const f = claude(t);
   const r = await runScan(ctx, { dryRun: false, discover: false, memory });
-  assert.deepEqual(r.proposals.map((p) => p.type).sort(), ["describe", "english", "remove"]);
-  assert.equal(r.filed.length, 3);
+  assert.deepEqual(r.proposals.map((p) => p.type).sort(), ["describe", "english", "remove", "rename"]);
+  assert.equal(r.filed.length, 4);
   const filed = [...tracker.issues.values()].filter((i) => i.labels.some((l) => l.name === LABELS.proposal));
-  assert.equal(filed.length, 3);
+  assert.equal(filed.length, 4);
   const describe = filed.map((i) => parseIssueBody(i.body)).find((p) => p?.type === "describe");
   assert.deepEqual(describe, { type: "describe", repo: "b/tts", old: "ხმის მოდელი.", new: DESC_OK, why: "პროექტი შეიცვალა." });
   assert.equal(f.mock.callCount(), 1); // one review: only b/tts changed its GitHub description
@@ -89,8 +92,19 @@ test("the next day the same findings are held, and nothing is reviewed again", a
   const f = claude(t);
   const r = await runScan(ctx, { dryRun: false, discover: false, memory });
   assert.deepEqual(r.proposals, []);
-  assert.deepEqual(r.held.map((h) => h.key).sort(), ["english", "remove:a/gone"]);
+  assert.deepEqual(r.held.map((h) => h.key).sort(), ["english", "remove:a/gone", "rename:a/oldname"]);
   assert.equal(f.mock.callCount(), 0);
+});
+
+test("without the proposal history a real scan stops before any model call, and a dry run says what it is missing", async (t) => {
+  const f = claude(t);
+  const down = { ...gh, rest: async () => Promise.reject(new Error("GitHub is down")) } as unknown as GitHub;
+  const blind: Ctx = { ...ctx, gh: down };
+  await assert.rejects(runScan(blind, { dryRun: false, discover: false, memory: {} }), /GitHub is down/);
+  assert.equal(f.mock.callCount(), 0); // the history decides what is worth asking, so nothing was asked
+  const dry = await runScan(blind, { dryRun: true, discover: false, memory: {} });
+  assert.ok(dry.notes.some((n) => n.startsWith("dry run without the proposal history (GitHub is down)")), dry.notes.join(" | "));
+  assert.deepEqual(dry.filed, []);
 });
 
 test("suggestions: handled ones are left alone; no link, already listed and duplicates get a reason", async (t) => {
@@ -100,7 +114,11 @@ test("suggestions: handled ones are left alone; no link, already listed and dupl
 
   assert.equal((await runSuggestion(ctx, 51, false)).outcome, "no repo link found");
   assert.equal((await runSuggestion(ctx, 52, false)).outcome, "already listed");
-  for (const n of [51, 52]) assert.equal(tracker.issues.get(n)?.state, "closed");
+  // the README still has the old address, which GitHub now redirects to the suggested one
+  assert.equal((await runSuggestion(ctx, 55, false)).outcome, "already listed");
+  assert.ok(tracker.comments.some((c) => c.number === 55 && c.body.includes("a/oldname")));
+  for (const n of [51, 52, 55]) assert.equal(tracker.issues.get(n)?.state, "closed");
+  assert.equal(f.mock.callCount(), 0);
 
   const proposed = await runSuggestion(ctx, 53, false);
   assert.equal(proposed.outcome, "proposed");

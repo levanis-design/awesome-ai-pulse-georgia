@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 // The gateway ships as one self-contained ESM file: the MCP SDK and zod are
 // bundled in, so the runtime image needs no node_modules (see Dockerfile).
 export default defineConfig({
-  entry: { gateway: "src/gateway-main.ts" },
+  entry: { gateway: "src/serve.ts" },
   format: ["esm"],
   target: "node20",
   platform: "node",

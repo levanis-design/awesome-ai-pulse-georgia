@@ -28,15 +28,7 @@ export function searchQueries(rules: Rules, now = new Date()): string[] {
   return [
     ...rules.discoverTopics.map((topic) => `topic:${topic} ${fresh}`),
     ...rules.discoverKeywords.map((kw) => `${kw} in:name,description ${fresh}`),
-    ...[
-      "ai-agents",
-      "llm",
-      "mcp",
-      "claude-code",
-      "agent-skills",
-      "rag",
-      "generative-ai",
-    ].map((topic) => `topic:${topic} ${old}`),
+    ...rules.bigMissTopics.map((topic) => `topic:${topic} ${old}`),
   ];
 }
 

@@ -22,9 +22,13 @@ jobs:
       group: agent-scan
       cancel-in-progress: false
     steps:
+      # no token is left in .git/config for install scripts to find
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
+      # Node 22: Node 20 reached its end of life in April 2026
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
@@ -44,13 +48,14 @@ jobs:
           key: agent-memory-${{ github.run_id }}
           restore-keys: agent-memory-
 
+      # exit 2 = every discovery source failed, so "nothing new" would be a guess
       - name: Scan
         working-directory: agent
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AGENT_MODEL: ${{ vars.AGENT_MODEL }}
-        run: npx tsx src/cli.ts scan --memory "$RUNNER_TEMP/agent-memory.json" --out "$RUNNER_TEMP/scan-report.json"
+        run: npm run scan -- --memory "$RUNNER_TEMP/agent-memory.json" --out "$RUNNER_TEMP/scan-report.json"
 
       - name: Save the agent's memory
         if: always()

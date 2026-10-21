@@ -6,8 +6,9 @@ name: Agent apply
 # and site data, the agent's tests and the MCP server's smoke test. If one
 # fails, nothing is pushed and each issue is told why.
 #
-# The push uses GITHUB_TOKEN, so — as with the star refreshes — it starts no
-# other workflow; the data rebuilt here is what mcp-data-sync would produce.
+# A push made with GITHUB_TOKEN starts no other workflow, so this run rebuilds
+# the data itself (what mcp-data-sync would produce) and then starts the npm
+# publish by hand, as mcp-star-refresh does.
 
 on:
   issues:
@@ -17,8 +18,10 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write # only to start mcp-publish.yml after the push
 
-# one apply at a time; a burst of approvals collapses into the next run
+# one apply at a time; a burst of approvals collapses into the next run,
+# which takes every approved issue that is still open
 concurrency:
   group: agent-apply
   cancel-in-progress: false
@@ -31,11 +34,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      # no token is left in .git/config: install scripts and tests cannot push,
+      # only the one push command below gets it
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: main
+          persist-credentials: false
 
+      # Node 22: Node 20 reached its end of life in April 2026
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
@@ -55,10 +62,9 @@ jobs:
         working-directory: agent
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx tsx src/cli.ts apply --out "$RUNNER_TEMP/apply-result.json"
+        run: npm run apply -- --out "$RUNNER_TEMP/apply-result.json"
 
       - name: Rebuild the derived data
-        id: rebuild
         if: steps.apply.outputs.applied != '0'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -68,7 +74,6 @@ jobs:
           node site/scripts/build-graph.mjs
 
       - name: Check that everything agrees
-        id: checks
         if: steps.apply.outputs.applied != '0'
         run: |
           npm run verify --prefix agent
@@ -79,32 +84,58 @@ jobs:
       - name: Commit and push
         id: push
         if: steps.apply.outputs.applied != '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           npm version patch --no-git-tag-version --prefix mcp
-          git add README.md assets/banner.svg docs/index.html docs/data.js site/index.html \
-            site/public/data/graph.json mcp/README.md mcp/src/index.ts mcp/smithery.yaml \
-            mcp/package.json mcp/package-lock.json mcp/data/repos.json mcp/data/github-cache.json
-          numbers="$(jq -r '[.applied[].number | "#\(.)"] | join(", ")' "$RUNNER_TEMP/apply-result.json")"
-          git commit -m "feat(agent): apply approved proposals ${numbers}"
-          git push origin HEAD:main || { git pull --rebase origin main && git push origin HEAD:main; }
+          result="$RUNNER_TEMP/apply-result.json"
+          # what apply changed, plus what the rebuild derives from it
+          mapfile -t changed < <(jq -r '.changedFiles[]' "$result")
+          git add -- "${changed[@]}" docs/data.js site/public/data/graph.json \
+            mcp/data/repos.json mcp/data/github-cache.json mcp/package.json mcp/package-lock.json
+          # a change nobody planned is not pushed along with the rest
+          stray="$(git diff --name-only)"
+          if [ -n "$stray" ]; then
+            echo "::error::files changed that apply did not plan for: $stray"
+            exit 1
+          fi
+          numbers="$(jq -r '[.applied[].number | "#\(.)"] | join(", ")' "$result")"
+          git commit -m "chore(agent): apply approved proposals ${numbers}"
+          # no pull and retry: a main that moved meanwhile was never checked together with this change
+          auth="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth}"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${auth}" push origin HEAD:main
           echo "url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      - name: Start the npm publish
+        if: steps.push.outcome == 'success'
+        # the change is already on main; a failed start is shown here, not as a failed apply
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run mcp-publish.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+      # also after a failed step: the result file says which issues this run took
       - name: Tell the issues
-        if: always() && steps.apply.outcome == 'success'
+        if: always() && steps.apply.outcome != 'skipped'
         working-directory: agent
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLIED: ${{ steps.apply.outputs.applied }}
           CHANGE_URL: ${{ steps.push.outputs.url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           result="$RUNNER_TEMP/apply-result.json"
+          if [ ! -f "$result" ]; then
+            echo "apply stopped before it knew which issues to take; nothing to tell"
+            exit 0
+          fi
+          applied="$(jq '.applied | length' "$result")"
           if [ -n "$CHANGE_URL" ]; then
-            npx tsx src/cli.ts report --result "$result" --commit "$CHANGE_URL"
-          elif [ "$APPLIED" = "0" ]; then
-            npx tsx src/cli.ts report --result "$result"
+            npm run report -- --result "$result" --commit "$CHANGE_URL"
+          elif [ "$applied" = "0" ]; then
+            npm run report -- --result "$result"
           else
-            npx tsx src/cli.ts report --result "$result" --error "a check failed, so nothing was pushed — details: $RUN_URL"
+            npm run report -- --result "$result" --error "a check failed, so nothing was pushed — details: $RUN_URL"
           fi

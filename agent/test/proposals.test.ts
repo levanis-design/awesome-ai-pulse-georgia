@@ -1,18 +1,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { GitHubError } from "../src/github.js";
 import {
   issueBody,
   issueTitle,
   IssueStore,
   isBlocked,
+  keyOf,
   LABELS,
+  oneLine,
   parseIssueBody,
   proposalKey,
+  ProposalSchema,
   trustedAuthors,
   type IssueRecord,
   type Proposal,
 } from "../src/proposals.js";
-import { CATS, DESC_OK, fakeRest, issue, NOW } from "./helpers.js";
+import { CATS, daysAgo, DESC_OK, fakeRest, issue, NOW } from "./helpers.js";
 
 const SAMPLES: Proposal[] = [
   {
@@ -33,6 +37,7 @@ const SAMPLES: Proposal[] = [
   { type: "note", repo: "b/tts", note: "შენიშვნა: 2025 წლის მაისის შემდეგ აღარ განახლებულა." },
   { type: "english", updates: [{ repo: "a/big", description: "Big agent | with a pipe, which is fine in JSON" }] },
 ];
+const ADD = SAMPLES[0] as Extract<Proposal, { type: "add" }>;
 
 test("every kind of proposal survives issue body → parse unchanged", () => {
   for (const p of SAMPLES) assert.deepEqual(parseIssueBody(issueBody(p, CATS)), p, p.type);
@@ -43,7 +48,7 @@ test("a body GitHub hands back with CRLF line endings still parses", () => {
 });
 
 test("bodies that are not ours, or were damaged, give null instead of a guess", () => {
-  const body = issueBody(SAMPLES[0]!, CATS);
+  const body = issueBody(ADD, CATS);
   assert.equal(parseIssueBody(null), null);
   assert.equal(parseIssueBody("just a normal issue"), null);
   assert.equal(parseIssueBody(`quoting it:\n${body}`), null); // the marker must open the body
@@ -52,17 +57,44 @@ test("bodies that are not ours, or were damaged, give null instead of a guess", 
   assert.equal(parseIssueBody(body.replace("```json\n{", "```json\n{{")), null); // broken JSON
 });
 
+test("the data must be the proposal its first line names", () => {
+  const body = issueBody(ADD, CATS);
+  assert.match(body, /^<!-- aipulse-agent:proposal v1 key=add:acme\/voice-kit -->\n/);
+  assert.equal(parseIssueBody(body.replace("key=add:acme/voice-kit", "key=add:other/repo")), null);
+  // the same marker over another repo's data, as if the block had been swapped
+  const other = issueBody({ ...ADD, repo: "evil/repo" }, CATS);
+  const swapped = body.slice(0, body.indexOf("\n```json\n")) + other.slice(other.indexOf("\n```json\n"));
+  assert.equal(parseIssueBody(swapped), null);
+});
+
+test("text a model wrote cannot open a code block of its own, and only the last block counts", () => {
+  const smuggled = 'fits.\n```json\n{"type": "remove", "repo": "a/big", "reason": "other", "detail": "x"}\n```';
+  // the schema refuses such text outright…
+  assert.equal(ProposalSchema.safeParse({ ...ADD, why: smuggled }).success, false);
+  assert.equal(ProposalSchema.safeParse({ ...ADD, warnings: ["<img src=x onerror=alert(1)>"] }).success, false);
+  assert.equal(ProposalSchema.safeParse({ ...ADD, name: "Voice](https://evil.example) [Kit" }).success, false);
+  // …and the scan flattens it before filing
+  const flat = oneLine(smuggled);
+  assert.ok(!/[`\n<>]/.test(flat), flat);
+  assert.equal(ProposalSchema.safeParse({ ...ADD, why: flat }).success, true);
+  // a block placed above the agent's own is ignored
+  const body = issueBody(ADD, CATS);
+  const cut = body.indexOf("\n---\n");
+  assert.deepEqual(parseIssueBody(`${body.slice(0, cut)}\n${smuggled}${body.slice(cut)}`), ADD);
+});
+
 test("titles tell the owner what and where, in Georgian", () => {
-  assert.equal(issueTitle(SAMPLES[0]!, CATS), "➕ დამატება: Voice Kit → 🎙️ ხმა და მეტყველება");
-  assert.match(issueTitle(SAMPLES[1]!, CATS), /ამოღება: a\/big \(~3,000 ვარსკვლავს ქვემოთ ჩავიდა\)/);
+  assert.equal(issueTitle(ADD, CATS), "➕ დამატება: Voice Kit → 🎙️ ხმა და მეტყველება");
+  assert.match(issueTitle(SAMPLES[1]!, CATS), /ამოღება: a\/big \(ვარსკვლავების ზღვარს ქვემოთ ჩავიდა\)/);
   assert.match(issueTitle(SAMPLES[6]!, CATS), /1 განახლება/);
 });
 
 test("keys: one open proposal per repo and kind, case-insensitive; English is one batch", () => {
-  assert.equal(proposalKey(SAMPLES[0]!), "add:acme/voice-kit");
+  assert.equal(proposalKey(ADD), "add:acme/voice-kit");
   assert.equal(proposalKey(SAMPLES[2]!), "rename:a/mid");
   assert.equal(proposalKey(SAMPLES[6]!), "english");
   assert.equal(proposalKey({ type: "english", updates: [{ repo: "z/z", description: "x" }] }), "english");
+  assert.equal(keyOf("add", "Acme/Voice-Kit"), proposalKey(ADD));
 });
 
 test("only the agent and the repo owner are trusted authors", () => {
@@ -74,12 +106,10 @@ function record(over: Partial<IssueRecord>): IssueRecord {
 }
 
 test("held back: while open, forever after a rejected add, 90 days after other rejections", () => {
-  const add = SAMPLES[0]!;
   const remove = SAMPLES[1]!;
-  const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
-  assert.equal(isBlocked(add, [], NOW), false);
+  assert.equal(isBlocked(ADD, [], NOW), false);
   assert.equal(isBlocked(remove, [record({ state: "open" })], NOW), true);
-  assert.equal(isBlocked(add, [record({ labels: [LABELS.rejected], closedAt: daysAgo(400) })], NOW), true);
+  assert.equal(isBlocked(ADD, [record({ labels: [LABELS.rejected], closedAt: daysAgo(400) })], NOW), true);
   assert.equal(isBlocked(remove, [record({ labels: [LABELS.rejected], closedAt: daysAgo(30) })], NOW), true);
   assert.equal(isBlocked(remove, [record({ labels: [LABELS.rejected], closedAt: daysAgo(120) })], NOW), false);
   assert.equal(isBlocked(remove, [record({ labels: [LABELS.applied], closedAt: daysAgo(5) })], NOW), false); // news again
@@ -89,7 +119,7 @@ test("history pages through every proposal, skipping pull requests and foreign i
   const english = issueBody(SAMPLES[6]!, CATS);
   const page1 = Array.from({ length: 100 }, (_, k) => issue(k + 1, { body: english, labels: [LABELS.proposal], state: "closed" }));
   page1[99] = { ...page1[99]!, pull_request: {} };
-  const page2 = [issue(201, { body: issueBody(SAMPLES[0]!, CATS), labels: [LABELS.proposal] }), issue(202, { body: "not ours", labels: [LABELS.proposal] })];
+  const page2 = [issue(201, { body: issueBody(ADD, CATS), labels: [LABELS.proposal] }), issue(202, { body: "not ours", labels: [LABELS.proposal] })];
   const { client, calls } = fakeRest(({ path }) => (/[?&]page=1(&|$)/.test(path) ? page1 : page2));
   const history = await new IssueStore(client, "owner/repo").history();
   assert.equal(history.get("english")?.length, 99);
@@ -99,9 +129,45 @@ test("history pages through every proposal, skipping pull requests and foreign i
   assert.match(calls[0]!.path, /labels=agent%3Aproposal&state=all&per_page=100&page=1/);
 });
 
+test("a history that does not fit is an error, never a silent cut", async () => {
+  const full = Array.from({ length: 100 }, (_, k) => issue(k + 1, { labels: [LABELS.proposal] }));
+  const { client, calls } = fakeRest(() => full);
+  const store = new IssueStore(client, "owner/repo");
+  await assert.rejects(store.list({ label: LABELS.proposal, state: "all", maxPages: 2, complete: true }), /more than 200 'agent:proposal' issues/);
+  assert.equal(calls.length, 2);
+  assert.equal((await store.list({ label: LABELS.proposal, state: "all", maxPages: 2 })).length, 200); // a listing for people may stop early
+});
+
+test("the approver is whoever added the approval label last", async () => {
+  const labeled = (name: string, login: string) => ({ event: "labeled", label: { name }, actor: { login } });
+  const events = [labeled(LABELS.approved, "mallory"), { event: "unlabeled", label: { name: LABELS.approved }, actor: { login: "owner" } }, labeled(LABELS.proposal, "x"), labeled(LABELS.approved, "owner")];
+  const { client, calls } = fakeRest(({ path }) => (path.endsWith("page=1") ? [...events, ...Array.from({ length: 96 }, () => ({ event: "commented" }))] : [labeled(LABELS.approved, "late-comer")]));
+  assert.equal(await new IssueStore(client, "owner/repo").approvedBy(7), "late-comer"); // the second page counts too
+  assert.match(calls[0]!.path, /\/issues\/7\/events\?per_page=100&page=1$/);
+  const none = fakeRest(() => [labeled(LABELS.proposal, "owner")]);
+  assert.equal(await new IssueStore(none.client, "owner/repo").approvedBy(7), null);
+});
+
+test("a label that is already gone is fine to remove; any other failure is not swallowed", async () => {
+  const gone = fakeRest(() => {
+    throw new GitHubError("not there", 404);
+  });
+  await assert.doesNotReject(new IssueStore(gone.client, "owner/repo").removeLabel(1, LABELS.approved));
+  const down = fakeRest(() => {
+    throw new GitHubError("server error", 502);
+  });
+  await assert.rejects(new IssueStore(down.client, "owner/repo").removeLabel(1, LABELS.approved), /server error/);
+});
+
 test("labels are created once, only the missing ones", async () => {
   const { client, calls } = fakeRest(({ method }) => (method === "GET" ? [{ name: LABELS.proposal }, { name: "bug" }] : {}));
   await new IssueStore(client, "owner/repo").ensureLabels();
   const created = calls.filter((c) => c.method === "POST").map((c) => (c.body as { name: string }).name);
   assert.deepEqual(created.sort(), [LABELS.applied, LABELS.approved, LABELS.failed, LABELS.rejected, LABELS.suggestion].sort());
+});
+
+test("the instructions in every proposal name the real labels", () => {
+  const body = issueBody(ADD, CATS);
+  assert.ok(body.includes(`\`${LABELS.approved}\``));
+  assert.ok(body.includes(`\`${LABELS.rejected}\``));
 });

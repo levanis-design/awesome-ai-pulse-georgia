@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { CategoryMeta } from "./config.js";
-import { readBadgeCounts, updateCounts } from "./counts.js";
+import { checkCounts, readBadgeCounts } from "./counts.js";
 import { allPaths, parseReadme, serializeReadme, totals, validateRow, type ReadmeDoc } from "./readme.js";
 
 const read = (root: string, ...parts: string[]) => readFileSync(resolve(root, ...parts), "utf-8");
@@ -30,7 +30,7 @@ export function verifyTree(root: string, categories: CategoryMeta[]): string[] {
     if (badge.repos !== rows.repos || badge.categories !== rows.categories) {
       problems.push(`README has ${rows.repos} rows in ${rows.categories} sections, its badges say ${badge.repos}/${badge.categories}`);
     }
-    updateCounts(root, badge, badge, false);
+    checkCounts(root, badge);
   } catch (err) {
     problems.push(...(err as Error).message.split("\n"));
   }

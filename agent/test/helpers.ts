@@ -1,10 +1,22 @@
-/** Shared fixtures: a tiny README, repo facts, and a fake GitHub that records every call. */
-import type { CategoryMeta } from "../src/config.js";
+/** Shared fixtures: a tiny README, repo facts, frozen rules, and a fake GitHub that records every call. */
+import { fileURLToPath } from "node:url";
+import { loadRules, type CategoryMeta, type Rules } from "../src/config.js";
 import type { RepoFacts } from "../src/facts.js";
 import { GitHubError, type RestClient } from "../src/github.js";
+import { LABELS } from "../src/proposals.js";
 import { TABLE_HEAD, TABLE_RULE } from "../src/readme.js";
 
 export const NOW = new Date("2026-10-21T12:00:00Z");
+
+/** NOW minus n days, as GitHub writes dates. */
+export const daysAgo = (n: number): string => new Date(NOW.getTime() - n * 86_400_000).toISOString();
+
+/**
+ * The rules as they stood when these tests were written. Tests read numbers
+ * from this copy, never from config/rules.json, so the owner can change a rule
+ * without breaking the checks the apply step runs.
+ */
+export const RULES: Rules = loadRules(fileURLToPath(new URL("./fixtures/rules.json", import.meta.url)));
 
 export const CATS: CategoryMeta[] = [
   { slug: "coding", emoji: "🤖", georgian: "კოდინგ აგენტები", english: "Coding" },
@@ -148,13 +160,25 @@ export function issue(number: number, over: Partial<Omit<FakeIssue, "labels">> &
   };
 }
 
+type LabelEvent = { event: "labeled"; label: { name: string }; actor: { login: string } };
+
 /**
  * An in-memory issue tracker behind the REST paths IssueStore uses, so tests
- * see the same label, comment and close effects GitHub would produce.
+ * see the same label, comment and close effects GitHub would produce. Issues
+ * that start out approved were approved by the repo owner, unless `approvedBy`
+ * names someone else for that number (null: no approval event at all); labels
+ * added later are added by `actor`, the owner by default.
  */
-export function fakeTracker(repo: string, initial: FakeIssue[]) {
+export function fakeTracker(repo: string, initial: FakeIssue[], opts: { approvedBy?: Record<number, string | null>; actor?: string } = {}) {
+  const owner = repo.split("/")[0]!;
   const issues = new Map(initial.map((i) => [i.number, i]));
   const comments: Array<{ number: number; body: string }> = [];
+  const labeled = (name: string, login: string): LabelEvent => ({ event: "labeled", label: { name }, actor: { login } });
+  const events = new Map<number, LabelEvent[]>();
+  for (const i of initial) {
+    const by = opts.approvedBy && i.number in opts.approvedBy ? opts.approvedBy[i.number] : owner;
+    if (i.labels.some((l) => l.name === LABELS.approved) && by) events.set(i.number, [labeled(LABELS.approved, by)]);
+  }
   let next = 900;
   const base = `/repos/${repo}`;
   const { client, calls } = fakeRest(({ method, path, body }) => {
@@ -172,13 +196,17 @@ export function fakeTracker(repo: string, initial: FakeIssue[]) {
     }
     if (method === "POST" && p === `${base}/issues`) {
       const b = body as { title: string; body: string; labels: string[] };
-      const created = issue(next++, { title: b.title, body: b.body, labels: b.labels, user: { login: repo.split("/")[0]! } });
+      const created = issue(next++, { title: b.title, body: b.body, labels: b.labels, user: { login: opts.actor ?? owner } });
       issues.set(created.number, created);
       return created;
     }
     if (method === "GET" && found && p.endsWith(`/issues/${found.number}`)) return found;
+    if (method === "GET" && found && p.endsWith("/events")) return url.searchParams.get("page") === "1" ? (events.get(found.number) ?? []) : [];
     if (method === "POST" && found && p.endsWith("/labels")) {
-      for (const name of (body as { labels: string[] }).labels) if (!found.labels.some((l) => l.name === name)) found.labels.push({ name });
+      for (const name of (body as { labels: string[] }).labels) {
+        if (!found.labels.some((l) => l.name === name)) found.labels.push({ name });
+        events.set(found.number, [...(events.get(found.number) ?? []), labeled(name, opts.actor ?? owner)]);
+      }
       return found.labels;
     }
     if (method === "DELETE" && found && p.includes("/labels/")) {

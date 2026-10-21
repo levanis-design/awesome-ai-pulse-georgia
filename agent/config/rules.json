@@ -1,7 +1,6 @@
 {
   "$comment": "The owner's curation rules, in one place. The agent reads this file on every run; change a number here instead of in code. Keys starting with $ are notes.",
   "repo": "tornikebolokadze1-cyber/awesome-ai-pulse-georgia",
-  "branch": "main",
   "thresholds": {
     "$minStarsNew": "a repo created within discoverWindowDays needs at least this many stars to be proposed",
     "minStarsNew": 5000,
@@ -102,6 +101,16 @@
     "skill",
     "gpt",
     "rag"
+  ],
+  "$bigMissTopics": "topics searched for older, not yet listed repos that pass minStarsOld and were pushed within discoverWindowDays",
+  "bigMissTopics": [
+    "ai-agents",
+    "llm",
+    "mcp",
+    "claude-code",
+    "agent-skills",
+    "rag",
+    "generative-ai"
   ],
   "exclude": {
     "$repos": "never propose these (owner rulings); reason is shown in logs",

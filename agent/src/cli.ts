@@ -1,24 +1,28 @@
 /**
  * aipulse-agent — the curator's commands, run by the GitHub workflows:
  *   scan     check listed repos, look for new ones, file proposals
- *            (--memory file keeps the model's verdicts between runs)
+ *            --memory FILE  keeps the model's verdicts between runs
+ *            --no-discover  only the health of listed repos, no search for new ones
+ *            --max-new N    draft at most N new repos (default: maxNewPerScan in rules.json)
+ *            --out FILE     the full report as JSON; exit 2 when every discovery source failed
  *   suggest  answer one owner suggestion issue (--issue N)
- *   apply    apply approved proposals to the working tree (--out result.json)
+ *   apply    apply approved proposals to the working tree (--out result.json,
+ *            --issues 12,15 to take only those); exit 1 when the run itself stopped
  *   verify   check that the README, every count and the rebuilt data agree (exit 1 if not)
  *   report   tell the issues how apply went (--result file, --commit URL | --error text)
- *   serve    run the MCP gateway locally
+ *   serve    run the MCP gateway locally (MCP_TOKEN, GITHUB_TOKEN; AGENT_REPO, AGENT_BRANCH, PORT)
  * scan, suggest, apply and report take --dry-run (nothing is written to GitHub or to files).
+ * Environment: GITHUB_TOKEN, ANTHROPIC_API_KEY, AGENT_MODEL, and AGENT_LOG_LEVEL=warn for quieter logs.
  */
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { reportApply, runApply, type ApplyResult } from "./apply.js";
 import { loadCategories, loadRules, REPO_ROOT } from "./config.js";
-import { startGateway } from "./gateway-main.js";
 import { GitHub } from "./github.js";
 import { llmFromEnv } from "./llm.js";
 import { log } from "./log.js";
 import { loadMemory, saveMemory } from "./memory.js";
-import { NO_AI_SIGNAL, runScan, runSuggestion, type Ctx, type ScanReport } from "./scan.js";
+import { discoveryBroken, NO_AI_SIGNAL, runScan, runSuggestion, type Ctx, type ScanReport } from "./scan.js";
 import { verifyTree } from "./verify.js";
 
 const { positionals, values } = parseArgs({
@@ -85,21 +89,18 @@ async function main(): Promise<void> {
   const dryRun = values["dry-run"] === true;
   switch (cmd) {
     case "scan": {
+      const maxNew = values["max-new"] === undefined ? undefined : Number(values["max-new"]);
+      // a typo here must not lift the model budget
+      if (maxNew !== undefined && !(Number.isInteger(maxNew) && maxNew >= 0)) throw new Error("--max-new needs a whole number, 0 or more");
       const ctx = context();
       const memory = loadMemory(values.memory);
-      const report = await runScan(ctx, {
-        dryRun,
-        discover: values["no-discover"] !== true,
-        memory,
-        ...(values["max-new"] ? { maxNew: Number(values["max-new"]) } : {}),
-      });
+      const report = await runScan(ctx, { dryRun, discover: values["no-discover"] !== true, memory, ...(maxNew !== undefined ? { maxNew } : {}) });
       if (values.memory && !dryRun) saveMemory(values.memory, memory, ctx.now);
       if (values.out) writeFileSync(values.out, JSON.stringify(report, null, 2));
       const md = summarize(report);
       toStepSummary(md);
       process.stdout.write(`${md}\n`);
-      const broken = report.sources.filter((s) => !s.ok);
-      if (broken.length === report.sources.length) process.exitCode = 2; // nothing was checked at all
+      if (discoveryBroken(report)) process.exitCode = 2; // "nothing new" would only be a guess
       return;
     }
     case "suggest": {
@@ -110,19 +111,24 @@ async function main(): Promise<void> {
       return;
     }
     case "apply": {
-      const numbers = values.issues ? values.issues.split(",").map(Number).filter(Number.isInteger) : undefined;
+      const numbers = values.issues?.split(",").map((s) => Number(s.trim()));
+      // a typo must not widen "only these" into "all of them"
+      if (numbers && !numbers.every((n) => Number.isInteger(n) && n > 0)) throw new Error("--issues needs issue numbers, like --issues 12,15");
       const result = await runApply(context(), { dryRun, ...(numbers ? { numbers } : {}) });
       if (values.out) writeFileSync(values.out, JSON.stringify(result, null, 2));
       setOutput("applied", String(result.applied.length));
       setOutput("failed", String(result.failed.length));
       const md = [
         `## აგენტი: დამტკიცებული ცვლილებები`,
+        ...(result.error ? [`⛔ გაშვება შეჩერდა და არაფერი შენახულა: ${result.error}`] : []),
         `რეპოები: ${result.counts.before.repos} → ${result.counts.after.repos}`,
         ...result.applied.map((a) => `- ✅ #${a.number} ${a.summary}`),
         ...result.failed.map((f) => `- ⚠️ #${f.number} ${f.error}`),
       ].join("\n");
       toStepSummary(md);
       process.stdout.write(`${md}\n`);
+      // the result file is already written, so the issues can still be told why
+      if (result.error) process.exitCode = 1;
       return;
     }
     case "report": {
@@ -142,9 +148,12 @@ async function main(): Promise<void> {
       if (problems.length) process.exitCode = 1;
       return;
     }
-    case "serve":
+    case "serve": {
+      // loaded only here: no other command needs the MCP SDK
+      const { startGateway } = await import("./gateway-main.js");
       startGateway();
       return;
+    }
     default:
       process.stderr.write("usage: cli.ts <scan|suggest|apply|verify|report|serve> [--dry-run] ...\n");
       process.exitCode = 64;
