@@ -12,8 +12,8 @@ name: Agent apply
 #   push     contents: write, and no npm, npx or node at all. Applies the patch
 #            to the same commit of main and checks the result as data (only
 #            the files listed below; only numbers where only a number may
-#            change; data files that are one plain JSON value), then pushes
-#            one commit.
+#            change; in the README only its table rows and numbers; data
+#            files that are one plain JSON value), then pushes one commit.
 #   tell     issues: write. Closes the applied issues with the commit link, or
 #            tells each one why nothing happened, also after a failed job.
 #
@@ -202,6 +202,12 @@ jobs:
               exit 1
             fi
           done
+          # the README: apply writes only its table rows and its numbers, so every other line is
+          # as it was but for its digits, and the file is still there
+          if ! cmp -s <(git show HEAD:README.md | grep -v '^| \[' | sed -E 's/[0-9]+/0/g') <(grep -v '^| \[' README.md | sed -E 's/[0-9]+/0/g'); then
+            echo "::error::README.md changed outside its table rows and numbers"
+            exit 1
+          fi
           # the data stays data: one JSON value per file, and docs/data.js (a script the
           # site loads) a single line that assigns one JSON object and does nothing else
           read -ra json_only <<< "$JSON_ONLY"

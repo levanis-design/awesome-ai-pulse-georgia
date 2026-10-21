@@ -10,6 +10,7 @@ import { test } from "node:test";
 import { REPO_ROOT } from "../src/config.js";
 import { SPOTS } from "../src/counts.js";
 import { LABELS } from "../src/proposals.js";
+import { formatRow } from "../src/readme.js";
 import { CACHE_FILE } from "../src/scan.js";
 
 const AGENT = ["agent-apply.yml", "agent-scan.yml", "agent-suggest.yml"];
@@ -193,7 +194,30 @@ test("the push job takes only planned files, and checks their shape as data", ()
   assert.ok(push.includes(`[ "$f" = "$1" ] && return 0`));
   assert.doesNotMatch(push, /\*" \$\{path\} "\*/);
   assert.ok(push.includes(`awk '$1 != "100644"'`));
-  assert.ok(push.includes(`sed -E 's/[0-9]+/0/g'`));
+  // the count files' own check, named in full: the README check below normalises digits the same way
+  assert.ok(
+    push.includes(
+      `if ! cmp -s <(git show "HEAD:\${f}" | sed -E 's/[0-9]+/0/g') <(sed -E 's/[0-9]+/0/g' "$f"); then`,
+    ),
+  );
+  // the README may change only in its table rows and numbers, and may not go away; a row is
+  // what formatRow writes, so if that ever changes, this check has to change with it
+  assert.ok(
+    push.includes(
+      `<(git show HEAD:README.md | grep -v '^| \\[' | sed -E 's/[0-9]+/0/g')`,
+    ),
+  );
+  assert.ok(
+    push.includes(`<(grep -v '^| \\[' README.md | sed -E 's/[0-9]+/0/g')`),
+  );
+  assert.ok(
+    formatRow({
+      name: "n",
+      url: "https://github.com/o/r",
+      stars: "1",
+      desc: "d.",
+    }).startsWith("| ["),
+  );
   assert.ok(push.includes(`jq -se 'length == 1'`));
   assert.ok(
     push.includes(`[ "$(head -c 17 docs/data.js)" != "window.AIPULSE = " ]`),
