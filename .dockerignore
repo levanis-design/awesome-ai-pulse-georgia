@@ -1,0 +1,10 @@
+# Only agent/Dockerfile builds an image here, and it needs just these paths.
+# Everything else (the site, node_modules, data) stays out of the build context.
+*
+!agent/Dockerfile
+!agent/package.json
+!agent/package-lock.json
+!agent/tsconfig.json
+!agent/tsup.config.ts
+!agent/src/
+!mcp/src/

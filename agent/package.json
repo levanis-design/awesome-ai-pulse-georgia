@@ -1,0 +1,34 @@
+{
+  "name": "aipulse-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-updating curator for the AI Pulse Georgia collection: daily GitHub scan, proposals as issues, owner approval, validated apply, and a remote MCP gateway for Grok Bot.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "scan": "tsx src/cli.ts scan",
+    "suggest": "tsx src/cli.ts suggest",
+    "apply": "tsx src/cli.ts apply",
+    "report": "tsx src/cli.ts report",
+    "verify": "tsx src/cli.ts verify",
+    "serve": "tsx src/cli.ts serve",
+    "build:gateway": "tsup",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "overrides": {
+    "esbuild": ">=0.28.1"
+  }
+}

@@ -1,0 +1,301 @@
+name: Agent apply
+
+# Carries out the proposals the owner approved (label agent:approved, added
+# from Grok Bot or by hand on GitHub). The work is split in three jobs, so that
+# no code from an npm package ever runs next to a token that can push:
+#
+#   prepare  read-only token. Installs the packages without their install
+#            scripts, applies the approved proposals to a fresh checkout of
+#            main, rebuilds the derived data and runs every check: the README
+#            round trip, every hand-written count, the agent's tests and the
+#            MCP server's smoke test. The change leaves this job as a patch.
+#   push     contents: write, and no npm, npx or node at all. Applies the patch
+#            to the same commit of main and checks the result as data (only
+#            the files listed below; only numbers where only a number may
+#            change; in the README only its table rows and numbers; data
+#            files that are one plain JSON value), then pushes one commit.
+#   tell     issues: write. Closes the applied issues with the commit link, or
+#            tells each one why nothing happened, also after a failed job.
+#
+# A push made with GITHUB_TOKEN starts no other workflow, so prepare rebuilds
+# the data itself (what mcp-data-sync would produce) and push starts the npm
+# publish by hand, as mcp-star-refresh does.
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch: {}
+
+permissions: {}
+
+# One run at a time, all three jobs together. A run that has to wait replaces an
+# older waiting one; that loses nothing, because every run takes every approved
+# issue that is still open.
+concurrency:
+  group: agent-apply
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # what apply may change, and what the rebuild derives from it: the patch may touch these and nothing else
+  CHANGEABLE: >-
+    README.md assets/banner.svg docs/index.html site/index.html mcp/README.md
+    mcp/src/index.ts mcp/package.json mcp/smithery.yaml mcp/package-lock.json
+    mcp/data/repos.json mcp/data/github-cache.json site/public/data/graph.json docs/data.js
+  # of those, the ones where only a number may change: the hand-written counts and the package version
+  NUMBERS_ONLY: >-
+    assets/banner.svg docs/index.html site/index.html mcp/README.md
+    mcp/src/index.ts mcp/package.json mcp/smithery.yaml mcp/package-lock.json
+  # and the data files, which must stay one plain JSON value each
+  JSON_ONLY: mcp/data/repos.json mcp/data/github-cache.json site/public/data/graph.json
+
+jobs:
+  prepare:
+    # Any label the owner adds starts a run, not only agent:approved: a run that replaced
+    # a waiting approval run still does that run's work. Nobody else can label issues here.
+    if: github.event_name == 'workflow_dispatch' || github.event.sender.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      applied: ${{ steps.apply.outputs.applied }}
+      base: ${{ steps.base.outputs.sha }}
+    steps:
+      # no token is left in .git/config for package code to find
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Remember the commit this run starts from
+        id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Node 22: Node 20 reached its end of life in April 2026
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            agent/package-lock.json
+            mcp/package-lock.json
+
+      # --ignore-scripts: no package runs code while it is being installed
+      - name: Install the agent
+        run: npm ci --prefix agent --ignore-scripts --no-audit --no-fund
+
+      - name: Apply approved proposals
+        id: apply
+        working-directory: agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/apply"
+          npm run apply -- --out "$RUNNER_TEMP/apply/result.json"
+
+      - name: Install the MCP server
+        if: steps.apply.outputs.applied != '0'
+        run: npm ci --prefix mcp --ignore-scripts --no-audit --no-fund
+
+      - name: Rebuild the derived data
+        if: steps.apply.outputs.applied != '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm run build --prefix mcp
+          npm run build:site --prefix mcp
+          node site/scripts/build-graph.mjs
+
+      - name: Check that everything agrees
+        if: steps.apply.outputs.applied != '0'
+        run: |
+          npm run verify --prefix agent
+          npm test --prefix agent
+          # the smoke test waits a fixed 1.5 s for a cold server and can miss once
+          npm run smoke --prefix mcp || npm run smoke --prefix mcp
+
+      - name: Package the change
+        if: steps.apply.outputs.applied != '0'
+        run: |
+          npm version patch --no-git-tag-version --ignore-scripts --prefix mcp
+          # a change nobody planned for, tracked or not, stops the run here
+          stray=""
+          while IFS= read -r path; do
+            [[ " ${CHANGEABLE} " == *" ${path} "* ]] || stray="${stray} ${path}"
+          done < <(git status --porcelain --untracked-files=all | cut -c4-)
+          if [ -n "$stray" ]; then
+            echo "::error::files changed that apply did not plan for:${stray}"
+            exit 1
+          fi
+          read -ra changeable <<< "$CHANGEABLE"
+          git add -- "${changeable[@]}"
+          git diff --cached --binary > "$RUNNER_TEMP/apply/changes.patch"
+
+      # also after a failed step: the result file says which issues this run took
+      - name: Hand the result to the next jobs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apply
+          path: ${{ runner.temp }}/apply/
+          retention-days: 7
+          if-no-files-found: ignore
+          overwrite: true
+
+  push:
+    needs: prepare
+    if: needs.prepare.result == 'success' && needs.prepare.outputs.applied != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: write # only to start mcp-publish.yml after the push
+    outputs:
+      url: ${{ steps.push.outputs.url }}
+    # The patch comes from a job that ran package code, so this job reads it as data and
+    # runs only git, jq and the GitHub CLI.
+    steps:
+      - name: Checkout the commit prepare started from
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.base }}
+          persist-credentials: false
+
+      - name: Download the change
+        uses: actions/download-artifact@v4
+        with:
+          name: apply
+          path: ${{ runner.temp }}/apply
+
+      - name: Check and apply the change
+        run: |
+          git apply --index "$RUNNER_TEMP/apply/changes.patch"
+          read -ra changeable <<< "$CHANGEABLE"
+          listed() { local f; for f in "${changeable[@]}"; do [ "$f" = "$1" ] && return 0; done; return 1; }
+          # every path the commit would change is one listed name, compared whole (a path with
+          # spaces cannot pass for two of them), and so is the old name of a moved file; and
+          # each changes as text
+          touched="$(git diff --cached --numstat --no-renames)"
+          while IFS=$'\t' read -r added _deleted path; do
+            [ -n "$added$path" ] || continue
+            if [ "$added" = "-" ] || ! listed "$path"; then
+              echo "::error::the patch touches a file it may not change: ${path}"
+              exit 1
+            fi
+          done <<< "$touched"
+          if git ls-files -s -- "${changeable[@]}" | awk '$1 != "100644"' | grep -q .; then
+            echo "::error::the patch turns a file into something other than a plain file"
+            exit 1
+          fi
+          # where only a count or the version may change, nothing else did
+          read -ra numbers_only <<< "$NUMBERS_ONLY"
+          for f in "${numbers_only[@]}"; do
+            if ! cmp -s <(git show "HEAD:${f}" | sed -E 's/[0-9]+/0/g') <(sed -E 's/[0-9]+/0/g' "$f"); then
+              echo "::error::${f} changed more than its numbers"
+              exit 1
+            fi
+          done
+          # the README: apply writes only its table rows and its numbers, so every other line is
+          # as it was but for its digits, and the file is still there
+          if ! cmp -s <(git show HEAD:README.md | grep -v '^| \[' | sed -E 's/[0-9]+/0/g') <(grep -v '^| \[' README.md | sed -E 's/[0-9]+/0/g'); then
+            echo "::error::README.md changed outside its table rows and numbers"
+            exit 1
+          fi
+          # the data stays data: one JSON value per file, and docs/data.js (a script the
+          # site loads) a single line that assigns one JSON object and does nothing else
+          read -ra json_only <<< "$JSON_ONLY"
+          for f in "${json_only[@]}"; do
+            jq -se 'length == 1' "$f" > /dev/null || { echo "::error::${f} is not one JSON value"; exit 1; }
+          done
+          if [ "$(wc -l < docs/data.js)" -gt 1 ] || [ "$(head -c 17 docs/data.js)" != "window.AIPULSE = " ] ||
+            ! sed -e '1s/^window\.AIPULSE = //' -e '1s/;$//' docs/data.js | jq -se 'length == 1 and (.[0] | type) == "object"' > /dev/null; then
+            echo "::error::docs/data.js is no longer a single JSON assignment"
+            exit 1
+          fi
+
+      - name: Commit and push
+        id: push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          numbers="$(jq -r '[.applied[].number | select(type == "number") | "#\(.)"] | join(", ")' "$RUNNER_TEMP/apply/result.json")"
+          # no hook runs, here or on push
+          git -c core.hooksPath=/dev/null commit -m "chore(agent): apply approved proposals ${numbers}"
+          # no pull and retry: a main that moved meanwhile was never checked together with this change
+          auth="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth}"
+          git -c core.hooksPath=/dev/null -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${auth}" push origin HEAD:main
+          echo "url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Start the npm publish
+        if: steps.push.outcome == 'success'
+        # the change is already on main; a failed start is shown here, not as a failed apply
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run mcp-publish.yml --repo "$GITHUB_REPOSITORY" --ref main
+
+  tell:
+    needs: [prepare, push]
+    # also after a failed or skipped push: the result file says which issues this run took
+    if: always() && needs.prepare.result != 'skipped' && needs.prepare.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      # missing when prepare stopped before it knew which issues to take: then there is nothing to tell
+      - name: Download the result
+        id: result
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: apply
+          path: ${{ runner.temp }}/apply
+
+      - name: Checkout the code prepare ran
+        if: steps.result.outcome == 'success'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.base }}
+          persist-credentials: false
+
+      - name: Setup Node 22
+        if: steps.result.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: agent/package-lock.json
+
+      - name: Install the agent
+        if: steps.result.outcome == 'success'
+        run: npm ci --prefix agent --ignore-scripts --no-audit --no-fund
+
+      - name: Tell the issues
+        if: steps.result.outcome == 'success'
+        working-directory: agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGE_URL: ${{ needs.push.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          result="$RUNNER_TEMP/apply/result.json"
+          applied="$(jq '.applied | length' "$result")"
+          if [ -n "$CHANGE_URL" ]; then
+            npm run report -- --result "$result" --commit "$CHANGE_URL"
+          elif [ "$applied" = "0" ]; then
+            npm run report -- --result "$result"
+          else
+            npm run report -- --result "$result" --error "nothing was pushed (a check failed, or main moved meanwhile) — details: $RUN_URL"
+          fi

@@ -1,0 +1,56 @@
+name: Agent suggestion
+
+# Answers the owner's suggestions: an issue labelled agent:suggestion (filed
+# from Grok Bot's suggest_repo, or labelled by hand) is checked against the
+# collection's rules and gets either a proposal or the reason why not.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  suggest:
+    # only the owner's own suggestions: a public repo lets anyone open an issue
+    if: >-
+      github.event_name == 'issues' &&
+      github.event.issue.user.login == github.repository_owner &&
+      github.event.sender.login == github.repository_owner &&
+      ((github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'agent:suggestion')) ||
+       (github.event.action == 'labeled' && github.event.label.name == 'agent:suggestion'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # opened + labeled can both fire for one issue; the second run finds it closed
+    concurrency:
+      group: agent-suggest-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+      # no token is left in .git/config for install scripts to find
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Node 22: Node 20 reached its end of life in April 2026
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: agent/package-lock.json
+
+      - name: Install
+        working-directory: agent
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Evaluate the suggestion
+        working-directory: agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AGENT_MODEL: ${{ vars.AGENT_MODEL }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: npm run suggest -- --issue "$ISSUE"

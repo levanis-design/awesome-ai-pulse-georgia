@@ -1,0 +1,74 @@
+name: Agent scan
+
+# The curator agent's daily look at the collection (see agent/README.md).
+# It checks every listed repo, looks for new ones, and files each finding as
+# a GitHub issue labelled agent:proposal. It never edits the collection: the
+# owner approves proposals, and agent-apply.yml carries them out.
+
+on:
+  schedule:
+    - cron: "17 4 * * *" # every day 04:17 UTC = 08:17 in Tbilisi
+  workflow_dispatch: {} # also started by the gateway's run_scan tool
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: agent-scan
+      cancel-in-progress: false
+    steps:
+      # no token is left in .git/config for install scripts to find
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Node 22: Node 20 reached its end of life in April 2026
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: agent/package-lock.json
+
+      - name: Install
+        working-directory: agent
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      # what the model already turned down, so it is not asked again every day
+      - name: Restore the agent's memory
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/agent-memory.json
+          key: agent-memory-${{ github.run_id }}
+          restore-keys: agent-memory-
+
+      # exit 2 = every discovery source failed, so "nothing new" would be a guess
+      - name: Scan
+        working-directory: agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AGENT_MODEL: ${{ vars.AGENT_MODEL }}
+        run: npm run scan -- --memory "$RUNNER_TEMP/agent-memory.json" --out "$RUNNER_TEMP/scan-report.json"
+
+      - name: Save the agent's memory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/agent-memory.json
+          key: agent-memory-${{ github.run_id }}
+
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-report
+          path: ${{ runner.temp }}/scan-report.json
+          retention-days: 14
+          if-no-files-found: ignore
