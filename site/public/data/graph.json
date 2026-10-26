@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T23:59:10.850Z",
+  "generated": "2026-10-26T01:20:45.382Z",
   "categories": [
     {
       "id": "coding",
@@ -3471,7 +3471,7 @@
       "category": "media",
       "url": "https://github.com/meituan-longcat/LongCat-Video",
       "desc": "LongCat-Video — Meituan-ის ვიდეოგენერაციის მოდელია, რომელიც ტექსტიდან ვიდეოს, სურათიდან ვიდეოს და არსებული ვიდეოს გაგრძელებას ერთ არქიტექტურაში აერთიანებს. რეპოზიტორია შეიცავს ინფერენსის კოდს, მოდელების წონების ბმულებსა და გაშვების ინსტრუქციებს. LongCat-Video-Avatar-ის ვარიანტი აუდიოს მიხედვით პერსონაჟის ანიმაციასა და ტუჩების სინქრონიზაციასაც ქმნის. გათვლილია GPU-ზე გაშვებაზე და PyTorch-ის გარემოს მოითხოვს. Python, MIT ლიცენზია.",
-      "descEn": null,
+      "descEn": "LongCat-Video is a video generation model supporting text-to-video, image-to-video, and video continuation, with an audio-driven avatar variant.",
       "stars": 9300
     },
     {

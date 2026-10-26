@@ -72,7 +72,9 @@ Then point your client at the absolute path of `dist/index.js` instead of `npx`.
 | `get_repo` | Fetch full details for a single repo | `{"name":"free-claude-code","lang":"en"}` |
 | `stats` | Total count, top 10 by stars, English-coverage rate | — |
 
-All tools accept `lang: "en" | "ka" | "both"` (default `"en"`). English descriptions come from each repo's GitHub `description` field; Georgian descriptions are AI Pulse Georgia's editorial reviews from the awesome-list README.
+All tools accept `lang: "en" | "ka" | "both"` (default `"en"`). English descriptions use curated text from `data/english-descriptions.json` when present, otherwise each repo's GitHub `description` field. Georgian descriptions are AI Pulse Georgia's editorial reviews from the awesome-list README.
+
+Curated English descriptions are keyed by lowercase `owner/repo` and applied by `npm run build:data`. Keep them separate from `data/github-cache.json`, which records GitHub's own metadata. This preserves useful English search terms when the original repository has no description.
 
 ### Categories
 

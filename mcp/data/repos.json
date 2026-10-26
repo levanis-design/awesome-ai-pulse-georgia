@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T23:59:10.850Z",
+  "generated": "2026-10-26T01:20:45.382Z",
   "totalRepos": 416,
   "categories": [
     {
@@ -4263,7 +4263,7 @@
       "categorySlug": "media",
       "categoryEmoji": "🎬",
       "categoryGeorgian": "მედია-გენერაცია",
-      "descriptionEn": null
+      "descriptionEn": "LongCat-Video is a video generation model supporting text-to-video, image-to-video, and video continuation, with an audio-driven avatar variant."
     },
     {
       "name": "Remotion Skills",
